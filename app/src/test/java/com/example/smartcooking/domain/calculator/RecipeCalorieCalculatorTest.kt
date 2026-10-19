@@ -77,4 +77,23 @@ class RecipeCalorieCalculatorTest {
         assertEquals(0.0, result.totalCalories, 0.001)
         assertEquals(0, result.breakdown.size)
     }
+
+    @Test
+    fun `oil from multiple ingredients aggregates into one breakdown entry`() {
+        val result = RecipeCalorieCalculator.calculate(
+            listOf(
+                item("鸡蛋", 100.0, 10.0, 0.70, kcal = 144.0, protein = 13.3, carbs = 2.8, fat = 8.8),
+                item("番茄", 200.0, 10.0, 0.70, kcal = 15.0, protein = 0.9, carbs = 3.3, fat = 0.2)
+            )
+        )
+        // 食材 2 项 + 聚合油 1 项 = 3 项;油 = (10+10)*9*0.70 = 126.0
+        assertEquals(3, result.breakdown.size)
+        assertEquals("烹饪吸收油脂", result.breakdown[2].name)
+        assertEquals(126.0, result.breakdown[2].calories, 0.05)
+        // 番茄为 breakdown[1],值 30.0(顺带钉住顺序契约)
+        assertEquals("番茄", result.breakdown[1].name)
+        assertEquals(30.0, result.breakdown[1].calories, 0.05)
+        // 总热量 = 144 + 30 + 126 = 300.0
+        assertEquals(300.0, result.totalCalories, 0.05)
+    }
 }
