@@ -90,7 +90,7 @@ fun RecipeListScreen(
         ) {
             if (state.recommended.isNotEmpty()) {
                 item {
-                    Text("为您推荐(按目标热量 ±15%)", style = MaterialTheme.typography.titleMedium)
+                    Text("为您推荐(按单餐预算 ±30%)", style = MaterialTheme.typography.titleMedium)
                 }
                 items(state.recommended, key = { "rec_${it.recipeId}" }) { recipe ->
                     RecipeCard(recipe = recipe, recommended = true, onClick = { onRecipeClick(recipe.recipeId) })
