@@ -23,6 +23,7 @@ object DatabaseModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "smart_cooking.db")
+            // TODO: v2 前替换为真实 Migration,避免升级丢数据
             .fallbackToDestructiveMigration()
             .build()
 

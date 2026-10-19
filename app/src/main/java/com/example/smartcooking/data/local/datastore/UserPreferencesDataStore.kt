@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.smartcooking.domain.model.Gender
 import com.example.smartcooking.domain.model.UserProfile
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -17,7 +18,9 @@ import javax.inject.Singleton
 private val Context.dataStore by preferencesDataStore(name = "user_profile")
 
 @Singleton
-class UserPreferencesDataStore @Inject constructor(private val context: Context) {
+class UserPreferencesDataStore @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
 
     val profileFlow: Flow<UserProfile?> = context.dataStore.data
         .map { prefs ->

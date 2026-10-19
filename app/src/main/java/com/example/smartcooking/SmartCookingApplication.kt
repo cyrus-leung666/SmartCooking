@@ -1,6 +1,7 @@
 package com.example.smartcooking
 
 import android.app.Application
+import android.util.Log
 import com.example.smartcooking.data.local.db.seed.DatabaseSeeder
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -19,6 +20,12 @@ class SmartCookingApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        applicationScope.launch { databaseSeeder.seedIfNeeded() }
+        applicationScope.launch {
+            try {
+                databaseSeeder.seedIfNeeded()
+            } catch (e: Exception) {
+                Log.w("SmartCooking", "种子数据写入失败", e)
+            }
+        }
     }
 }

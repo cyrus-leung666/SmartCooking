@@ -14,6 +14,8 @@ import javax.inject.Singleton
 
 // 后端留桩:当前 Repository 走 Room 本地库,以下实例暂未被使用
 // 后续接后端时:将 BASE_URL 换成真实地址,并在 RepositoryImpl 中注入 ApiService 切换数据源
+// 注意:targetSdk 36 默认禁止 cleartext HTTP,启用真实后端时需在 manifest 配置
+// android:usesCleartextTraffic="true" 或 networkSecurityConfig
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
@@ -35,9 +37,13 @@ object NetworkModule {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    @Provides fun provideUserApiService(retrofit: Retrofit): UserApiService =
+    @Provides
+    @Singleton
+    fun provideUserApiService(retrofit: Retrofit): UserApiService =
         retrofit.create(UserApiService::class.java)
 
-    @Provides fun provideCalorieApiService(retrofit: Retrofit): CalorieApiService =
+    @Provides
+    @Singleton
+    fun provideCalorieApiService(retrofit: Retrofit): CalorieApiService =
         retrofit.create(CalorieApiService::class.java)
 }
