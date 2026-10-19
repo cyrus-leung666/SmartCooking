@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.SmartCooking" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
