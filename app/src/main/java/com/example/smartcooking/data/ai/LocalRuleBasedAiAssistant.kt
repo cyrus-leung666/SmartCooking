@@ -7,7 +7,7 @@ import com.example.smartcooking.domain.usecase.CalculateBmiUseCase
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// AI 留桩:基于目标热量 ±15% 的本地规则推荐,后续可替换为 DeepSeek/OpenAI 远程实现
+// AI 留桩:基于单餐预算(目标热量÷3)±30% 的本地规则推荐,后续可替换为 DeepSeek/OpenAI 远程实现
 @Singleton
 class LocalRuleBasedAiAssistant @Inject constructor(
     private val calculateBmiUseCase: CalculateBmiUseCase
