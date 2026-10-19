@@ -3,10 +3,16 @@ package com.example.smartcooking.data.local.db.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "recipe_ingredients",
+    indices = [
+        Index("recipe_id"),
+        Index("ingredient_id"),
+        Index("method_id")
+    ],
     foreignKeys = [
         ForeignKey(
             entity = RecipeEntity::class,

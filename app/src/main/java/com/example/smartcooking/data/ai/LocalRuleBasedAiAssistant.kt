@@ -21,8 +21,11 @@ class LocalRuleBasedAiAssistant @Inject constructor(
             userProfile.weightKg,
             userProfile.activityLevel
         ).targetCalories
-        val min = target * 0.85
-        val max = target * 1.15
+        // 与"单餐预算"(全天目标 ÷3)比较,而非全天目标:
+        // 单道菜热量(数十~数百 kcal)与全天预算量级不匹配,直接比会恒为空推荐
+        val mealBudget = target / 3.0
+        val min = mealBudget * 0.70
+        val max = mealBudget * 1.30
         return recipes.filter { it.totalCalories in min..max }
     }
 }

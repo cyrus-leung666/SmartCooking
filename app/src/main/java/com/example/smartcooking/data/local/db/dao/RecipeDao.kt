@@ -11,7 +11,7 @@ interface RecipeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<RecipeEntity>)
 
-    @Query("SELECT * FROM recipes")
+    @Query("SELECT * FROM recipes ORDER BY recipe_id")
     suspend fun getAll(): List<RecipeEntity>
 
     @Query("SELECT * FROM recipes WHERE recipe_id = :recipeId")
@@ -28,6 +28,7 @@ interface RecipeDao {
         WHERE (:query = '' OR r.title LIKE '%' || :query || '%' OR i.name LIKE '%' || :query || '%')
           AND (:difficulty = '' OR r.difficulty = :difficulty)
           AND (:maxTimeMinutes = 0 OR r.cooking_time_minutes <= :maxTimeMinutes)
+        ORDER BY r.recipe_id
         """
     )
     suspend fun searchRecipeIds(query: String, difficulty: String, maxTimeMinutes: Int): List<String>

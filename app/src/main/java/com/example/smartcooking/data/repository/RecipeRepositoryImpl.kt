@@ -1,5 +1,6 @@
 package com.example.smartcooking.data.repository
 
+import android.util.Log
 import com.example.smartcooking.data.local.db.dao.RecipeDao
 import com.example.smartcooking.data.local.db.dao.RecipeIngredientDao
 import com.example.smartcooking.data.local.db.dao.RecipeIngredientWithNames
@@ -99,6 +100,7 @@ class RecipeRepositoryImpl @Inject constructor(
         val array = JSONArray(json)
         (0 until array.length()).map { array.getString(it) }
     } catch (e: Exception) {
+        Log.w("RecipeRepository", "instructions JSON 解析失败: $json", e)
         emptyList()
     }
 }

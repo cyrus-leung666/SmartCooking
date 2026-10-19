@@ -9,6 +9,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.example.smartcooking.domain.model.Gender
 import com.example.smartcooking.domain.model.UserProfile
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,20 +19,22 @@ private val Context.dataStore by preferencesDataStore(name = "user_profile")
 @Singleton
 class UserPreferencesDataStore @Inject constructor(private val context: Context) {
 
-    val profileFlow: Flow<UserProfile?> = context.dataStore.data.map { prefs ->
-        val gender = prefs[KEY_GENDER] ?: return@map null
-        val age = prefs[KEY_AGE] ?: return@map null
-        val height = prefs[KEY_HEIGHT] ?: return@map null
-        val weight = prefs[KEY_WEIGHT] ?: return@map null
-        val activity = prefs[KEY_ACTIVITY] ?: return@map null
-        UserProfile(
-            gender = if (gender == "male") Gender.MALE else Gender.FEMALE,
-            age = age,
-            heightCm = height,
-            weightKg = weight,
-            activityLevel = activity
-        )
-    }
+    val profileFlow: Flow<UserProfile?> = context.dataStore.data
+        .map { prefs ->
+            val gender = prefs[KEY_GENDER] ?: return@map null
+            val age = prefs[KEY_AGE] ?: return@map null
+            val height = prefs[KEY_HEIGHT] ?: return@map null
+            val weight = prefs[KEY_WEIGHT] ?: return@map null
+            val activity = prefs[KEY_ACTIVITY] ?: return@map null
+            UserProfile(
+                gender = if (gender == "male") Gender.MALE else Gender.FEMALE,
+                age = age,
+                heightCm = height,
+                weightKg = weight,
+                activityLevel = activity
+            )
+        }
+        .catch { emit(null) } // DataStore 读盘 IOException 重试失败后按"无档案"降级,避免崩溃
 
     suspend fun saveProfile(profile: UserProfile) {
         context.dataStore.edit { prefs ->
