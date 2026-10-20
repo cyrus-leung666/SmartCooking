@@ -9,6 +9,7 @@ import com.example.smartcooking.domain.usecase.CalculateBmiUseCase
 import com.example.smartcooking.domain.usecase.GetUserProfileUseCase
 import com.example.smartcooking.domain.usecase.SaveUserProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -84,10 +85,16 @@ class ProfileViewModel @Inject constructor(
             return
         }
         viewModelScope.launch {
-            saveUserProfileUseCase(
-                UserProfile(state.gender, age, height, weight, state.activityLevel)
-            )
-            _uiState.update { it.copy(saved = true) }
+            try {
+                saveUserProfileUseCase(
+                    UserProfile(state.gender, age, height, weight, state.activityLevel)
+                )
+                _uiState.update { it.copy(saved = true, error = null) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Failed to save, please try again later") }
+            }
         }
     }
 }
