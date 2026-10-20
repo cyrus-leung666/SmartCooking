@@ -12,9 +12,9 @@ class GetRecommendedRecipesUseCase @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val aiRecipeAssistant: AiRecipeAssistant
 ) {
-    suspend operator fun invoke(): List<RecipeSummary> {
+    suspend operator fun invoke(exclude: Set<String> = emptySet()): List<RecipeSummary> {
         val profile = userRepository.getProfile().first() ?: return emptyList()
         val recipes = recipeRepository.getRecipes()
-        return aiRecipeAssistant.recommend(profile, recipes)
+        return aiRecipeAssistant.recommend(profile, recipes, exclude)
     }
 }

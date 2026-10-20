@@ -13,6 +13,8 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import dagger.Provides
+import kotlin.random.Random
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -34,4 +36,11 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSeedStatus(impl: DatabaseSeeder): SeedStatus
+
+    companion object {
+        // 随机源注入:生产用默认随机;单测直接以固定种子构造 LocalRuleBasedAiAssistant
+        @Provides
+        @Singleton
+        fun provideRandom(): Random = Random.Default
+    }
 }
