@@ -9,7 +9,9 @@ import com.example.smartcooking.domain.model.Ingredient
 import com.example.smartcooking.domain.usecase.CalculateRecipeCalorieUseCase
 import com.example.smartcooking.domain.usecase.GetCookingMethodsUseCase
 import com.example.smartcooking.domain.usecase.GetIngredientsUseCase
+import com.example.smartcooking.domain.usecase.ObserveSeedCompletionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,7 +39,8 @@ data class CalculatorUiState(
 class CalculatorViewModel @Inject constructor(
     private val getIngredientsUseCase: GetIngredientsUseCase,
     private val getCookingMethodsUseCase: GetCookingMethodsUseCase,
-    private val calculateRecipeCalorieUseCase: CalculateRecipeCalorieUseCase
+    private val calculateRecipeCalorieUseCase: CalculateRecipeCalorieUseCase,
+    private val observeSeedCompletionUseCase: ObserveSeedCompletionUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CalculatorUiState())
@@ -46,15 +49,41 @@ class CalculatorViewModel @Inject constructor(
     private var nextRowId = 1
 
     init {
+        loadData()
+        // 种子数据完成时重载,修复首启竞态下食材/方式列表为空
         viewModelScope.launch {
-            val ingredients = getIngredientsUseCase()
-            val methods = getCookingMethodsUseCase()
-            _uiState.update {
-                it.copy(
-                    ingredients = ingredients,
-                    methods = methods,
-                    rows = listOf(newRow(0))
+            observeSeedCompletionUseCase().collect { completed ->
+                if (completed) loadData()
+            }
+        }
+    }
+
+    private fun loadData() {
+        viewModelScope.launch {
+            try {
+                val ingredients = getIngredientsUseCase()
+                val methods = getCookingMethodsUseCase()
+                val firstRow = CalculatorRow(
+                    id = 0,
+                    ingredientId = ingredients.firstOrNull()?.ingredientId.orEmpty(),
+                    weightG = "100",
+                    methodId = methods.firstOrNull()?.methodId.orEmpty(),
+                    addedOilG = "0"
                 )
+                _uiState.update { state ->
+                    val needsReseed = state.rows.isEmpty() ||
+                        state.rows.all { it.ingredientId.isEmpty() && it.methodId.isEmpty() }
+                    state.copy(
+                        ingredients = ingredients,
+                        methods = methods,
+                        rows = if (needsReseed) listOf(firstRow) else state.rows,
+                        error = null
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "数据加载失败,请稍后重试") }
             }
         }
     }
@@ -71,11 +100,15 @@ class CalculatorViewModel @Inject constructor(
     }
 
     fun onAddRow() {
-        _uiState.update { it.copy(rows = it.rows + newRow(nextRowId++)) }
+        val id = nextRowId++
+        _uiState.update { it.copy(rows = it.rows + newRow(id), result = null) }
     }
 
     fun onRemoveRow(rowId: Int) {
-        _uiState.update { it.copy(rows = it.rows.filterNot { row -> row.id == rowId }) }
+        _uiState.update { state ->
+            if (state.rows.size <= 1) state
+            else state.copy(rows = state.rows.filterNot { it.id == rowId }, result = null)
+        }
     }
 
     fun onRowIngredientChange(rowId: Int, ingredientId: String) =
@@ -92,7 +125,10 @@ class CalculatorViewModel @Inject constructor(
 
     private fun updateRow(rowId: Int, transform: (CalculatorRow) -> CalculatorRow) {
         _uiState.update { state ->
-            state.copy(rows = state.rows.map { row -> if (row.id == rowId) transform(row) else row })
+            state.copy(
+                rows = state.rows.map { row -> if (row.id == rowId) transform(row) else row },
+                result = null
+            )
         }
     }
 
@@ -104,12 +140,13 @@ class CalculatorViewModel @Inject constructor(
             val method = state.methods.firstOrNull { it.methodId == row.methodId }
                 ?: return@mapNotNull null
             val weight = row.weightG.toDoubleOrNull() ?: return@mapNotNull null
+            if (!weight.isFinite() || weight <= 0.0) return@mapNotNull null
             val oil = row.addedOilG.toDoubleOrNull() ?: return@mapNotNull null
-            if (weight <= 0.0) return@mapNotNull null
+            if (!oil.isFinite()) return@mapNotNull null
             CalculatorItem(ingredient, weight, method, oil)
         }
         if (items.size != state.rows.size) {
-            _uiState.update { it.copy(error = "请完整填写每一行的食材、克重和烹饪方式") }
+            _uiState.update { it.copy(error = "请完整填写每一行的食材、克重和烹饪方式", result = null) }
             return
         }
         val result = calculateRecipeCalorieUseCase(items)

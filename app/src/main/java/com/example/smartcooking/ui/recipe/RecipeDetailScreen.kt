@@ -29,9 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.smartcooking.domain.usecase.RecipeDetailWithCalories
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +42,8 @@ fun RecipeDetailScreen(
     viewModel: RecipeDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val detail = state.detail
+    val error = state.error
 
     LaunchedEffect(recipeId) { viewModel.load(recipeId) }
 
@@ -62,12 +65,15 @@ fun RecipeDetailScreen(
                 contentAlignment = Alignment.Center
             ) { CircularProgressIndicator() }
 
-            state.error != null -> Text(
-                state.error ?: "",
-                Modifier.padding(innerPadding).padding(16.dp)
+            error != null -> Text(
+                error,
+                Modifier.padding(innerPadding).padding(16.dp),
+                color = MaterialTheme.colorScheme.error
             )
 
-            state.detail != null -> DetailContent(state.detail!!, Modifier.padding(innerPadding))
+            detail != null -> DetailContent(detail, Modifier.padding(innerPadding))
+
+            else -> Box(Modifier.fillMaxSize().padding(innerPadding))
         }
     }
 }
@@ -97,11 +103,13 @@ private fun DetailContent(detail: RecipeDetailWithCalories, modifier: Modifier =
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("热量概览", style = MaterialTheme.typography.titleSmall)
                 Text(
-                    "总热量 %.1f kcal".format(detail.calories.totalCalories),
+                    String.format(Locale.US, "总热量 %.1f kcal", detail.calories.totalCalories),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    "蛋白质 %.1f g · 碳水 %.1f g · 脂肪 %.1f g".format(
+                    String.format(
+                        Locale.US,
+                        "蛋白质 %.1f g · 碳水 %.1f g · 脂肪 %.1f g",
                         detail.calories.totalProteinG,
                         detail.calories.totalCarbsG,
                         detail.calories.totalFatG
@@ -117,14 +125,16 @@ private fun DetailContent(detail: RecipeDetailWithCalories, modifier: Modifier =
                     Text(item.name)
                     Text(
                         buildString {
-                            append("%.0f g · %s".format(item.weightG, item.methodName))
-                            if (item.addedOilG > 0) append(" · 加油 %.0f g".format(item.addedOilG))
+                            append(String.format(Locale.US, "%.0f g · %s", item.weightG, item.methodName))
+                            if (item.addedOilG > 0) {
+                                append(String.format(Locale.US, " · 加油 %.0f g", item.addedOilG))
+                            }
                         },
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
                 Text(
-                    "%.1f kcal".format(item.caloriesPer100g * item.weightG / 100.0),
+                    String.format(Locale.US, "%.1f kcal", item.caloriesPer100g * item.weightG / 100.0),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -134,7 +144,7 @@ private fun DetailContent(detail: RecipeDetailWithCalories, modifier: Modifier =
         detail.calories.breakdown.forEach { entry ->
             Row(Modifier.fillMaxWidth()) {
                 Text(entry.name, Modifier.weight(1f))
-                Text("%.1f kcal".format(entry.calories))
+                Text(String.format(Locale.US, "%.1f kcal", entry.calories))
             }
         }
 

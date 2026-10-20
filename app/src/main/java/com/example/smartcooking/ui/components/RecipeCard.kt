@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.smartcooking.domain.model.RecipeSummary
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,7 +27,8 @@ fun RecipeCard(
             Column(Modifier.weight(1f)) {
                 Text(recipe.title, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "${recipe.cookingTimeMinutes} 分钟 · ${recipe.difficulty} · 约 %.0f kcal".format(recipe.totalCalories),
+                    "${recipe.cookingTimeMinutes} 分钟 · ${recipe.difficulty} · 约 " +
+                        String.format(Locale.US, "%.0f kcal", recipe.totalCalories),
                     style = MaterialTheme.typography.bodySmall
                 )
             }

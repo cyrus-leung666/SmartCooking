@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartcooking.domain.model.RecipeSummary
 import com.example.smartcooking.domain.usecase.GetRecommendedRecipesUseCase
-import com.example.smartcooking.domain.usecase.GetRecipesUseCase
 import com.example.smartcooking.domain.usecase.ObserveSeedCompletionUseCase
 import com.example.smartcooking.domain.usecase.SearchRecipesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,12 +23,12 @@ data class RecipeListUiState(
     val maxTimeMinutes: Int = 0,
     val recipes: List<RecipeSummary> = emptyList(),
     val recommended: List<RecipeSummary> = emptyList(),
-    val loading: Boolean = true
+    val loading: Boolean = true,
+    val error: String? = null
 )
 
 @HiltViewModel
 class RecipeListViewModel @Inject constructor(
-    private val getRecipesUseCase: GetRecipesUseCase,
     private val searchRecipesUseCase: SearchRecipesUseCase,
     private val getRecommendedRecipesUseCase: GetRecommendedRecipesUseCase,
     private val observeSeedCompletionUseCase: ObserveSeedCompletionUseCase
@@ -34,6 +36,8 @@ class RecipeListViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(RecipeListUiState())
     val uiState: StateFlow<RecipeListUiState> = _uiState.asStateFlow()
+
+    private var filterJob: Job? = null
 
     init {
         refresh()
@@ -47,9 +51,18 @@ class RecipeListViewModel @Inject constructor(
 
     private fun refresh() {
         viewModelScope.launch {
-            val recipes = getRecipesUseCase()
-            val recommended = runCatching { getRecommendedRecipesUseCase() }.getOrDefault(emptyList())
-            _uiState.update { it.copy(recipes = recipes, recommended = recommended, loading = false) }
+            try {
+                val state = _uiState.value
+                val recipes = searchRecipesUseCase(state.query, state.difficulty, state.maxTimeMinutes)
+                val recommended = runCatching { getRecommendedRecipesUseCase() }.getOrDefault(emptyList())
+                _uiState.update {
+                    it.copy(recipes = recipes, recommended = recommended, loading = false, error = null)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update { it.copy(loading = false, error = "加载失败,请稍后重试") }
+            }
         }
     }
 
@@ -69,10 +82,18 @@ class RecipeListViewModel @Inject constructor(
     }
 
     private fun applyFilter() {
-        viewModelScope.launch {
-            val state = _uiState.value
-            val result = searchRecipesUseCase(state.query, state.difficulty, state.maxTimeMinutes)
-            _uiState.update { it.copy(recipes = result) }
+        filterJob?.cancel()
+        filterJob = viewModelScope.launch {
+            delay(300)
+            try {
+                val state = _uiState.value
+                val result = searchRecipesUseCase(state.query, state.difficulty, state.maxTimeMinutes)
+                _uiState.update { it.copy(recipes = result, error = null) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "加载失败,请稍后重试") }
+            }
         }
     }
 }
