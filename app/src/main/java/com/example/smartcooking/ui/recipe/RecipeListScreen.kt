@@ -14,11 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,7 +46,7 @@ private val TIME_OPTIONS = listOf(
     120 to "≤2 h"
 )
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeListScreen(
     onRecipeClick: (String) -> Unit,
@@ -88,14 +90,19 @@ fun RecipeListScreen(
             Text(it, color = MaterialTheme.colorScheme.error)
         }
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+        PullToRefreshBox(
+            isRefreshing = state.refreshing,
+            onRefresh = viewModel::onRefresh,
+            modifier = Modifier.fillMaxSize()
         ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
             if (state.recommended.isNotEmpty()) {
                 item {
-                    Text("Recommended for you (per-meal budget ±30%)", style = MaterialTheme.typography.titleMedium)
+                    Text("Recommended for you (based on your BMI calorie target)", style = MaterialTheme.typography.titleMedium)
                 }
                 items(state.recommended, key = { "rec_${it.recipeId}" }) { recipe ->
                     RecipeCard(recipe = recipe, recommended = true, onClick = { onRecipeClick(recipe.recipeId) })
@@ -116,6 +123,7 @@ fun RecipeListScreen(
             }
             if (!state.loading && state.recipes.isEmpty()) {
                 item { Text("No matching recipes") }
+            }
             }
         }
     }
