@@ -12,6 +12,7 @@ import com.example.smartcooking.domain.usecase.GetIngredientsUseCase
 import com.example.smartcooking.domain.usecase.ObserveSeedCompletionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,6 +49,8 @@ class CalculatorViewModel @Inject constructor(
 
     private var nextRowId = 1
 
+    private var loadJob: Job? = null
+
     init {
         loadData()
         // 种子数据完成时重载,修复首启竞态下食材/方式列表为空
@@ -59,7 +62,8 @@ class CalculatorViewModel @Inject constructor(
     }
 
     private fun loadData() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             try {
                 val ingredients = getIngredientsUseCase()
                 val methods = getCookingMethodsUseCase()

@@ -54,7 +54,13 @@ class RecipeListViewModel @Inject constructor(
             try {
                 val state = _uiState.value
                 val recipes = searchRecipesUseCase(state.query, state.difficulty, state.maxTimeMinutes)
-                val recommended = runCatching { getRecommendedRecipesUseCase() }.getOrDefault(emptyList())
+                val recommended = try {
+                    getRecommendedRecipesUseCase()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    emptyList()
+                }
                 _uiState.update {
                     it.copy(recipes = recipes, recommended = recommended, loading = false, error = null)
                 }
