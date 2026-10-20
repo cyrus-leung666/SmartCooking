@@ -21,7 +21,7 @@ import com.example.smartcooking.data.local.db.entity.UserEntity
         RecipeEntity::class,
         RecipeIngredientEntity::class
     ],
-    version = 1,
+    version = 2, // v2: 5fde9ef 种子数据步骤去编号,破坏性迁移后重种(预发布阶段可接受)
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

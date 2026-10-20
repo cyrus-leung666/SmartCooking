@@ -131,7 +131,8 @@ class CalculatorViewModel @Inject constructor(
         _uiState.update { state ->
             state.copy(
                 rows = state.rows.map { row -> if (row.id == rowId) transform(row) else row },
-                result = null
+                result = null,
+                error = null
             )
         }
     }
@@ -144,7 +145,7 @@ class CalculatorViewModel @Inject constructor(
             val method = state.methods.firstOrNull { it.methodId == row.methodId }
                 ?: return@mapNotNull null
             val weight = row.weightG.toDoubleOrNull() ?: return@mapNotNull null
-            if (!weight.isFinite() || weight <= 0.0) return@mapNotNull null
+            if (!weight.isFinite() || weight <= 0.0 || weight > 10000.0) return@mapNotNull null
             val oil = row.addedOilG.toDoubleOrNull() ?: return@mapNotNull null
             if (!oil.isFinite()) return@mapNotNull null
             CalculatorItem(ingredient, weight, method, oil)
