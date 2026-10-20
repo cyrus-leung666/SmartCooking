@@ -43,7 +43,7 @@ class RecipeCalorieCalculatorTest {
         assertEquals(3, result.breakdown.size)
         assertEquals("鸡蛋", result.breakdown[0].name)
         assertEquals(216.0, result.breakdown[0].calories, 0.05)
-        assertEquals("烹饪吸收油脂", result.breakdown[2].name)
+        assertEquals("Absorbed Cooking Oil", result.breakdown[2].name)
         assertEquals(63.0, result.breakdown[2].calories, 0.05)
     }
 
@@ -88,7 +88,7 @@ class RecipeCalorieCalculatorTest {
         )
         // 食材 2 项 + 聚合油 1 项 = 3 项;油 = (10+10)*9*0.70 = 126.0
         assertEquals(3, result.breakdown.size)
-        assertEquals("烹饪吸收油脂", result.breakdown[2].name)
+        assertEquals("Absorbed Cooking Oil", result.breakdown[2].name)
         assertEquals(126.0, result.breakdown[2].calories, 0.05)
         // 番茄为 breakdown[1],值 30.0(顺带钉住顺序契约)
         assertEquals("番茄", result.breakdown[1].name)

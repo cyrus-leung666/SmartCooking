@@ -67,7 +67,7 @@ class ProfileViewModel @Inject constructor(
         val height = state.heightCm.toDoubleOrNull()
         val weight = state.weightKg.toDoubleOrNull()
         if (age == null || height == null || weight == null || age <= 0 || height <= 0 || weight <= 0) {
-            _uiState.update { it.copy(error = "请输入有效的年龄、身高和体重") }
+            _uiState.update { it.copy(error = "Please enter valid age, height and weight") }
             return
         }
         val result = calculateBmiUseCase(state.gender, age, height, weight, state.activityLevel)

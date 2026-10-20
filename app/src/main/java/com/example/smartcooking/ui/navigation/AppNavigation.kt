@@ -37,9 +37,9 @@ object Routes {
 private data class BottomNavItem(val route: String, val label: String, val icon: ImageVector)
 
 private val bottomItems = listOf(
-    BottomNavItem(Routes.PROFILE, "个人档案", Icons.Filled.Person),
-    BottomNavItem(Routes.RECIPE_LIST, "菜谱", Icons.Filled.RestaurantMenu),
-    BottomNavItem(Routes.CALCULATOR, "计算器", Icons.Filled.Calculate)
+    BottomNavItem(Routes.PROFILE, "Profile", Icons.Filled.Person),
+    BottomNavItem(Routes.RECIPE_LIST, "Recipes", Icons.Filled.RestaurantMenu),
+    BottomNavItem(Routes.CALCULATOR, "Calculator", Icons.Filled.Calculate)
 )
 
 @Composable

@@ -30,16 +30,16 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.smartcooking.domain.model.Gender
 
 private val ACTIVITY_LEVELS = listOf(
-    1.2 to "久坐",
-    1.375 to "轻度活动",
-    1.55 to "中度活动",
-    1.725 to "高强度"
+    1.2 to "Sedentary",
+    1.375 to "Lightly Active",
+    1.55 to "Moderately Active",
+    1.725 to "Very Active"
 )
 
 private fun categoryLabel(category: String): String = when (category) {
-    "Overweight" -> "超重(减脂)"
-    "Underweight" -> "偏瘦(增重)"
-    else -> "正常(维持)"
+    "Overweight" -> "Overweight (fat loss)"
+    "Underweight" -> "Underweight (weight gain)"
+    else -> "Normal (maintain)"
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -54,16 +54,16 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("个人档案", style = MaterialTheme.typography.headlineMedium)
+        Text("Personal Profile", style = MaterialTheme.typography.headlineMedium)
 
-        Text("性别", style = MaterialTheme.typography.titleSmall)
+        Text("Gender", style = MaterialTheme.typography.titleSmall)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
                     selected = state.gender == Gender.MALE,
                     onClick = { viewModel.onGenderChange(Gender.MALE) }
                 )
-                Text("男")
+                Text("Male")
             }
             Spacer(Modifier.width(24.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -71,33 +71,33 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
                     selected = state.gender == Gender.FEMALE,
                     onClick = { viewModel.onGenderChange(Gender.FEMALE) }
                 )
-                Text("女")
+                Text("Female")
             }
         }
 
         OutlinedTextField(
             value = state.age,
             onValueChange = viewModel::onAgeChange,
-            label = { Text("年龄") },
+            label = { Text("Age") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
         OutlinedTextField(
             value = state.heightCm,
             onValueChange = viewModel::onHeightChange,
-            label = { Text("身高 (cm)") },
+            label = { Text("Height (cm)") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
         OutlinedTextField(
             value = state.weightKg,
             onValueChange = viewModel::onWeightChange,
-            label = { Text("体重 (kg)") },
+            label = { Text("Weight (kg)") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
 
-        Text("活动系数", style = MaterialTheme.typography.titleSmall)
+        Text("Activity Level", style = MaterialTheme.typography.titleSmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ACTIVITY_LEVELS.forEach { (level, label) ->
                 FilterChip(
@@ -111,33 +111,33 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
         Button(onClick = viewModel::calculate, modifier = Modifier.fillMaxWidth()) {
-            Text("计算每日推荐热量")
+            Text("Calculate Daily Calorie Target")
         }
 
         state.result?.let { result ->
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("计算结果", style = MaterialTheme.typography.titleMedium)
-                    Text("BMI: ${result.bmi}(${categoryLabel(result.category)})")
+                    Text("Results", style = MaterialTheme.typography.titleMedium)
+                    Text("BMI: ${result.bmi} (${categoryLabel(result.category)})")
                     Text("BMR: ${result.bmr} kcal")
                     Text("TDEE: ${result.tdee} kcal")
                     Text(
-                        "每日推荐热量: ${result.targetCalories} kcal",
+                        "Daily Calorie Target: ${result.targetCalories} kcal",
                         style = MaterialTheme.typography.titleSmall
                     )
-                    Text("三大营养素配比 ${result.nutrition.ratioLabel}")
+                    Text("Macronutrient Ratio ${result.nutrition.ratioLabel}")
                     Text(
-                        "碳水 ${result.nutrition.carbsG} g / 蛋白质 ${result.nutrition.proteinG} g / 脂肪 ${result.nutrition.fatG} g"
+                        "Carbs ${result.nutrition.carbsG} g / Protein ${result.nutrition.proteinG} g / Fat ${result.nutrition.fatG} g"
                     )
                     Text(result.nutrition.dietaryAdvice, style = MaterialTheme.typography.bodySmall)
                 }
             }
 
             OutlinedButton(onClick = viewModel::save, modifier = Modifier.fillMaxWidth()) {
-                Text("保存个人档案")
+                Text("Save Profile")
             }
             if (state.saved) {
-                Text("已保存", color = MaterialTheme.colorScheme.primary)
+                Text("Saved", color = MaterialTheme.colorScheme.primary)
             }
         }
     }

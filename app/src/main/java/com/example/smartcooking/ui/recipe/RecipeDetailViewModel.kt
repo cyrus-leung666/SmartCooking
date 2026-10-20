@@ -38,14 +38,14 @@ class RecipeDetailViewModel @Inject constructor(
             try {
                 val result = getRecipeDetailUseCase(recipeId)
                 if (result == null) {
-                    _uiState.update { it.copy(loading = false, error = "菜谱不存在") }
+                    _uiState.update { it.copy(loading = false, error = "Recipe not found") }
                 } else {
                     _uiState.update { it.copy(loading = false, detail = result, error = null) }
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _uiState.update { it.copy(loading = false, error = "加载失败,请稍后重试") }
+                _uiState.update { it.copy(loading = false, error = "Failed to load, please try again later") }
             }
         }
     }

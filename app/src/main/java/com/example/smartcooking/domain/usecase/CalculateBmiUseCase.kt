@@ -32,9 +32,9 @@ class CalculateBmiUseCase @Inject constructor() {
         }
 
         val advice = when (category) {
-            "Overweight" -> "建议控制热量摄入,搭配每周 3~5 次有氧运动,逐步减脂。"
-            "Underweight" -> "建议适当增加热量摄入,配合力量训练,健康增重。"
-            else -> "维持现有体重,建议搭配中等强度抗阻训练。"
+            "Overweight" -> "Control calorie intake and add aerobic exercise 3-5 times per week to gradually lose fat."
+            "Underweight" -> "Increase calorie intake moderately and combine with strength training for healthy weight gain."
+            else -> "Maintain your current weight; moderate-intensity resistance training is recommended."
         }
 
         return BmiResult(

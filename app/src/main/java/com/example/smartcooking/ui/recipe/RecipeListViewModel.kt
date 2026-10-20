@@ -67,7 +67,7 @@ class RecipeListViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _uiState.update { it.copy(loading = false, error = "加载失败,请稍后重试") }
+                _uiState.update { it.copy(loading = false, error = "Failed to load, please try again later") }
             }
         }
     }
@@ -98,7 +98,7 @@ class RecipeListViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = "加载失败,请稍后重试") }
+                _uiState.update { it.copy(error = "Failed to load, please try again later") }
             }
         }
     }

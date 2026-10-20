@@ -27,14 +27,14 @@ fun RecipeCard(
             Column(Modifier.weight(1f)) {
                 Text(recipe.title, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "${recipe.cookingTimeMinutes} 分钟 · ${recipe.difficulty} · 约 " +
+                    "${recipe.cookingTimeMinutes} min · ${recipe.difficulty} · ~" +
                         String.format(Locale.US, "%.0f kcal", recipe.totalCalories),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
             if (recommended) {
                 Text(
-                    "推荐",
+                    "Recommended",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )

@@ -34,7 +34,7 @@ class CalculateRecipeCalorieUseCaseTest {
         assertEquals(3, result.breakdown.size)
         assertEquals("鸡蛋", result.breakdown[0].name)
         assertEquals("番茄", result.breakdown[1].name)
-        assertEquals("烹饪吸收油脂", result.breakdown.last().name)
+        assertEquals("Absorbed Cooking Oil", result.breakdown.last().name)
         assertEquals(63.0, result.breakdown.last().calories, 0.05)
     }
 }

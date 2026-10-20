@@ -8,7 +8,7 @@ import kotlin.math.round
 object RecipeCalorieCalculator {
 
     const val OIL_KCAL_PER_GRAM = 9.0
-    const val OIL_BREAKDOWN_NAME = "烹饪吸收油脂"
+    const val OIL_BREAKDOWN_NAME = "Absorbed Cooking Oil"
 
     fun calculate(items: List<RecipeIngredientItem>): CalorieResult {
         var totalCalories = 0.0

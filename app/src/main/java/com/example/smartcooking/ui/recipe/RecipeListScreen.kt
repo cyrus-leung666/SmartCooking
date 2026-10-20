@@ -28,19 +28,20 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.smartcooking.ui.components.RecipeCard
 
+// 难度 chips:值保持中文存储值,仅显示文案英文
 private val DIFFICULTY_OPTIONS = listOf(
-    "" to "全部难度",
-    "简单" to "简单",
-    "中等" to "中等",
-    "困难" to "困难"
+    "" to "All difficulties",
+    "简单" to "Easy",
+    "中等" to "Medium",
+    "困难" to "Hard"
 )
 
 private val TIME_OPTIONS = listOf(
-    0 to "不限时长",
-    15 to "≤15分钟",
-    30 to "≤30分钟",
-    60 to "≤60分钟",
-    120 to "≤2小时"
+    0 to "Any duration",
+    15 to "≤15 min",
+    30 to "≤30 min",
+    60 to "≤60 min",
+    120 to "≤2 h"
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -52,12 +53,12 @@ fun RecipeListScreen(
     val state by viewModel.uiState.collectAsState()
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("菜谱库", style = MaterialTheme.typography.headlineMedium)
+        Text("Recipe Library", style = MaterialTheme.typography.headlineMedium)
 
         OutlinedTextField(
             value = state.query,
             onValueChange = viewModel::onQueryChange,
-            label = { Text("搜索菜名或食材,如:番茄") },
+            label = { Text("Search recipes or ingredients, e.g. 番茄") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -94,7 +95,7 @@ fun RecipeListScreen(
         ) {
             if (state.recommended.isNotEmpty()) {
                 item {
-                    Text("为您推荐(按单餐预算 ±30%)", style = MaterialTheme.typography.titleMedium)
+                    Text("Recommended for you (per-meal budget ±30%)", style = MaterialTheme.typography.titleMedium)
                 }
                 items(state.recommended, key = { "rec_${it.recipeId}" }) { recipe ->
                     RecipeCard(recipe = recipe, recommended = true, onClick = { onRecipeClick(recipe.recipeId) })
@@ -114,7 +115,7 @@ fun RecipeListScreen(
                 RecipeCard(recipe = recipe, onClick = { onRecipeClick(recipe.recipeId) })
             }
             if (!state.loading && state.recipes.isEmpty()) {
-                item { Text("没有匹配的菜谱") }
+                item { Text("No matching recipes") }
             }
         }
     }

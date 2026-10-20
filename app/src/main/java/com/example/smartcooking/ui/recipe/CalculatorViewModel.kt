@@ -87,7 +87,7 @@ class CalculatorViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = "数据加载失败,请稍后重试") }
+                _uiState.update { it.copy(error = "Failed to load data, please try again later") }
             }
         }
     }
@@ -151,7 +151,7 @@ class CalculatorViewModel @Inject constructor(
             CalculatorItem(ingredient, weight, method, oil)
         }
         if (items.size != state.rows.size) {
-            _uiState.update { it.copy(error = "请完整填写每一行的食材、克重和烹饪方式", result = null) }
+            _uiState.update { it.copy(error = "Please complete the ingredient, weight and cooking method for every row", result = null) }
             return
         }
         val result = calculateRecipeCalorieUseCase(items)

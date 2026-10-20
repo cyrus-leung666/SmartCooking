@@ -38,14 +38,14 @@ fun CalorieCalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("热量计算器", style = MaterialTheme.typography.headlineMedium)
+        Text("Calorie Calculator", style = MaterialTheme.typography.headlineMedium)
 
         state.rows.forEach { row ->
             key(row.id) {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         DropdownSelector(
-                            label = "选择食材",
+                            label = "Select ingredient",
                             options = state.ingredients.map { it.ingredientId to it.name },
                             selectedId = row.ingredientId,
                             onSelect = { viewModel.onRowIngredientChange(row.id, it) }
@@ -53,13 +53,13 @@ fun CalorieCalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
                         OutlinedTextField(
                             value = row.weightG,
                             onValueChange = { viewModel.onRowWeightChange(row.id, it) },
-                            label = { Text("克重 (g)") },
+                            label = { Text("Weight (g)") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                         )
                         DropdownSelector(
-                            label = "烹饪方式",
+                            label = "Cooking method",
                             options = state.methods.map { it.methodId to it.methodName },
                             selectedId = row.methodId,
                             onSelect = { viewModel.onRowMethodChange(row.id, it) }
@@ -67,7 +67,7 @@ fun CalorieCalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
                         OutlinedTextField(
                             value = row.addedOilG,
                             onValueChange = { viewModel.onRowOilChange(row.id, it) },
-                            label = { Text("额外加油 (g)") },
+                            label = { Text("Added oil (g)") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
@@ -76,7 +76,7 @@ fun CalorieCalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
                             onClick = { viewModel.onRemoveRow(row.id) },
                             enabled = state.rows.size > 1
                         ) {
-                            Text("删除该食材")
+                            Text("Remove this ingredient")
                         }
                     }
                 }
@@ -84,10 +84,10 @@ fun CalorieCalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
         }
 
         OutlinedButton(onClick = viewModel::onAddRow, modifier = Modifier.fillMaxWidth()) {
-            Text("+ 添加食材")
+            Text("+ Add ingredient")
         }
         Button(onClick = viewModel::calculate, modifier = Modifier.fillMaxWidth()) {
-            Text("计算热量")
+            Text("Calculate Calories")
         }
 
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -95,15 +95,15 @@ fun CalorieCalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
         state.result?.let { result ->
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("计算结果", style = MaterialTheme.typography.titleMedium)
+                    Text("Results", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        String.format(Locale.US, "总热量 %.1f kcal", result.totalCalories),
+                        String.format(Locale.US, "Total %.1f kcal", result.totalCalories),
                         style = MaterialTheme.typography.titleLarge
                     )
                     Text(
                         String.format(
                             Locale.US,
-                            "蛋白质 %.1f g · 碳水 %.1f g · 脂肪 %.1f g",
+                            "Protein %.1f g · Carbs %.1f g · Fat %.1f g",
                             result.totalProteinG,
                             result.totalCarbsG,
                             result.totalFatG

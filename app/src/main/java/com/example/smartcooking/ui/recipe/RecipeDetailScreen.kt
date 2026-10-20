@@ -50,10 +50,10 @@ fun RecipeDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(state.detail?.detail?.title ?: "菜谱详情") },
+                title = { Text(state.detail?.detail?.title ?: "Recipe Details") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -96,20 +96,20 @@ private fun DetailContent(detail: RecipeDetailWithCalories, modifier: Modifier =
                 contentScale = ContentScale.Crop
             )
         }
-        Text("${d.cookingTimeMinutes} 分钟 · ${d.difficulty}", style = MaterialTheme.typography.bodySmall)
+        Text("${d.cookingTimeMinutes} min · ${d.difficulty}", style = MaterialTheme.typography.bodySmall)
         Text(d.description, style = MaterialTheme.typography.bodyMedium)
 
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("热量概览", style = MaterialTheme.typography.titleSmall)
+                Text("Calorie Overview", style = MaterialTheme.typography.titleSmall)
                 Text(
-                    String.format(Locale.US, "总热量 %.1f kcal", detail.calories.totalCalories),
+                    String.format(Locale.US, "Total %.1f kcal", detail.calories.totalCalories),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
                     String.format(
                         Locale.US,
-                        "蛋白质 %.1f g · 碳水 %.1f g · 脂肪 %.1f g",
+                        "Protein %.1f g · Carbs %.1f g · Fat %.1f g",
                         detail.calories.totalProteinG,
                         detail.calories.totalCarbsG,
                         detail.calories.totalFatG
@@ -118,7 +118,7 @@ private fun DetailContent(detail: RecipeDetailWithCalories, modifier: Modifier =
             }
         }
 
-        Text("食材明细", style = MaterialTheme.typography.titleMedium)
+        Text("Ingredients", style = MaterialTheme.typography.titleMedium)
         d.items.forEach { item ->
             Row(Modifier.fillMaxWidth()) {
                 Column(Modifier.weight(1f)) {
@@ -127,7 +127,7 @@ private fun DetailContent(detail: RecipeDetailWithCalories, modifier: Modifier =
                         buildString {
                             append(String.format(Locale.US, "%.0f g · %s", item.weightG, item.methodName))
                             if (item.addedOilG > 0) {
-                                append(String.format(Locale.US, " · 加油 %.0f g", item.addedOilG))
+                                append(String.format(Locale.US, " · +%.0f g oil", item.addedOilG))
                             }
                         },
                         style = MaterialTheme.typography.bodySmall
@@ -140,7 +140,7 @@ private fun DetailContent(detail: RecipeDetailWithCalories, modifier: Modifier =
             }
         }
 
-        Text("热量明细", style = MaterialTheme.typography.titleMedium)
+        Text("Calorie Breakdown", style = MaterialTheme.typography.titleMedium)
         detail.calories.breakdown.forEach { entry ->
             Row(Modifier.fillMaxWidth()) {
                 Text(entry.name, Modifier.weight(1f))
@@ -148,7 +148,7 @@ private fun DetailContent(detail: RecipeDetailWithCalories, modifier: Modifier =
             }
         }
 
-        Text("烹饪步骤", style = MaterialTheme.typography.titleMedium)
+        Text("Cooking Steps", style = MaterialTheme.typography.titleMedium)
         d.instructions.forEachIndexed { index, step ->
             Text("${index + 1}. $step", style = MaterialTheme.typography.bodyMedium)
         }
