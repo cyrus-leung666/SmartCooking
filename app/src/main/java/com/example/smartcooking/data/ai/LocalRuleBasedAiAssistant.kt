@@ -33,6 +33,9 @@ class LocalRuleBasedAiAssistant @Inject constructor(
         // 与"单餐预算"(全天目标 ÷3)比较,而非全天目标:
         // 单道菜热量(数十~数百 kcal)与全天预算量级不匹配,直接比会恒为空推荐
         val mealBudget = target / 3.0
+        // 预算非正(极端档案输入产生负目标,或 NaN)时候选窗口为空/反向,
+        // 放宽循环永不收敛会阻塞主线程(ANR),直接返回空推荐
+        if (!(mealBudget > 0.0)) return emptyList()
         var pool = recipes.filter { it.totalCalories in mealBudget * 0.70..mealBudget * 1.30 }
         var tolerance = 0.30
         while (pool.size < 3 && pool.size < recipes.size) {

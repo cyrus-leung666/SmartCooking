@@ -77,4 +77,14 @@ class LocalRuleBasedAiAssistantTest {
 
         assertTrue(result.isEmpty())
     }
+
+    @Test
+    fun `returns empty list for non-positive meal budget instead of hanging`() {
+        // 极端年龄 → 负目标热量 → 单餐预算为负,候选窗口反向且恒为空,
+        // 放宽循环曾永不收敛导致主线程死循环(ANR);修复后应快速返回空列表
+        val extreme = UserProfile(Gender.MALE, 2124, 175.0, 20.0, 1.2)
+        val result = runBlocking { assistant().recommend(extreme, recipes) }
+
+        assertTrue(result.isEmpty())
+    }
 }
