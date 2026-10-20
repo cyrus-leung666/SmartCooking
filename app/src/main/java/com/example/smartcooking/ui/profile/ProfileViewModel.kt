@@ -9,6 +9,7 @@ import com.example.smartcooking.domain.usecase.CalculateBmiUseCase
 import com.example.smartcooking.domain.usecase.GetUserProfileUseCase
 import com.example.smartcooking.domain.usecase.SaveUserProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,11 +56,11 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun onGenderChange(gender: Gender) = _uiState.update { it.copy(gender = gender) }
-    fun onAgeChange(value: String) = _uiState.update { it.copy(age = value) }
-    fun onHeightChange(value: String) = _uiState.update { it.copy(heightCm = value) }
-    fun onWeightChange(value: String) = _uiState.update { it.copy(weightKg = value) }
-    fun onActivityChange(value: Double) = _uiState.update { it.copy(activityLevel = value) }
+    fun onGenderChange(gender: Gender) = _uiState.update { it.copy(gender = gender, saved = false) }
+    fun onAgeChange(value: String) = _uiState.update { it.copy(age = value, saved = false) }
+    fun onHeightChange(value: String) = _uiState.update { it.copy(heightCm = value, saved = false) }
+    fun onWeightChange(value: String) = _uiState.update { it.copy(weightKg = value, saved = false) }
+    fun onActivityChange(value: Double) = _uiState.update { it.copy(activityLevel = value, saved = false) }
 
     fun calculate() {
         val state = _uiState.value
@@ -76,14 +77,24 @@ class ProfileViewModel @Inject constructor(
 
     fun save() {
         val state = _uiState.value
-        val age = state.age.toIntOrNull() ?: return
-        val height = state.heightCm.toDoubleOrNull() ?: return
-        val weight = state.weightKg.toDoubleOrNull() ?: return
+        val age = state.age.toIntOrNull()
+        val height = state.heightCm.toDoubleOrNull()
+        val weight = state.weightKg.toDoubleOrNull()
+        if (age == null || height == null || weight == null || age <= 0 || height <= 0 || weight <= 0) {
+            _uiState.update { it.copy(error = "Please enter valid age, height and weight") }
+            return
+        }
         viewModelScope.launch {
-            saveUserProfileUseCase(
-                UserProfile(state.gender, age, height, weight, state.activityLevel)
-            )
-            _uiState.update { it.copy(saved = true) }
+            try {
+                saveUserProfileUseCase(
+                    UserProfile(state.gender, age, height, weight, state.activityLevel)
+                )
+                _uiState.update { it.copy(saved = true, error = null) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Failed to save, please try again later") }
+            }
         }
     }
 }
