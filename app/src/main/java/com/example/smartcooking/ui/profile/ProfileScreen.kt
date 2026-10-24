@@ -6,12 +6,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -19,7 +18,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -33,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.smartcooking.domain.model.Gender
+import com.example.smartcooking.ui.components.EnergyCard
+import java.util.Locale
 
 private val ACTIVITY_LEVELS = listOf(
     1.2 to "Sedentary",
@@ -42,9 +45,9 @@ private val ACTIVITY_LEVELS = listOf(
 )
 
 private fun categoryLabel(category: String): String = when (category) {
-    "Overweight" -> "Overweight (fat loss)"
-    "Underweight" -> "Underweight (weight gain)"
-    else -> "Normal (maintain)"
+    "Overweight" -> "Overweight · fat loss"
+    "Underweight" -> "Underweight · weight gain"
+    else -> "Normal · maintain"
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -69,23 +72,32 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
         ) {
             Text("Personal Profile", style = MaterialTheme.typography.headlineMedium)
 
+            state.result?.let { result ->
+                EnergyCard(
+                    label = "Your energy index",
+                    value = String.format(Locale.US, "%.1f", result.bmi),
+                    unit = "BMI",
+                    chip = categoryLabel(result.category),
+                    stats = listOf(
+                        "Target" to String.format(Locale.US, "%,.0f kcal", result.targetCalories),
+                        "BMR" to String.format(Locale.US, "%,.0f", result.bmr),
+                        "TDEE" to String.format(Locale.US, "%,.0f", result.tdee)
+                    )
+                )
+            }
+
             Text("Gender", style = MaterialTheme.typography.titleSmall)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(
-                        selected = state.gender == Gender.MALE,
-                        onClick = { viewModel.onGenderChange(Gender.MALE) }
-                    )
-                    Text("Male")
-                }
-                Spacer(Modifier.width(24.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(
-                        selected = state.gender == Gender.FEMALE,
-                        onClick = { viewModel.onGenderChange(Gender.FEMALE) }
-                    )
-                    Text("Female")
-                }
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                SegmentedButton(
+                    selected = state.gender == Gender.MALE,
+                    onClick = { viewModel.onGenderChange(Gender.MALE) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                ) { Text("Male") }
+                SegmentedButton(
+                    selected = state.gender == Gender.FEMALE,
+                    onClick = { viewModel.onGenderChange(Gender.FEMALE) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                ) { Text("Female") }
             }
 
             OutlinedTextField(
@@ -110,7 +122,7 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
                 singleLine = true
             )
 
-            Text("Activity Level", style = MaterialTheme.typography.titleSmall)
+            Text("Activity level", style = MaterialTheme.typography.titleSmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ACTIVITY_LEVELS.forEach { (level, label) ->
                     FilterChip(
@@ -123,34 +135,38 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
 
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
-            Button(onClick = viewModel::calculate, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = viewModel::calculate,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(100.dp)
+            ) {
                 Text("Calculate Daily Calorie Target")
             }
 
             state.result?.let { result ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Results", style = MaterialTheme.typography.titleMedium)
-                        Text("BMI: ${result.bmi} (${categoryLabel(result.category)})")
-                        Text("BMR: ${result.bmr} kcal")
-                        Text("TDEE: ${result.tdee} kcal")
+                Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            "Daily Calorie Target: ${result.targetCalories} kcal",
-                            style = MaterialTheme.typography.titleSmall
+                            "Macronutrients · ${result.nutrition.ratioLabel}",
+                            style = MaterialTheme.typography.titleMedium
                         )
-                        Text("Macronutrient Ratio ${result.nutrition.ratioLabel}")
+                        MacroRow("Carbs", String.format(Locale.US, "%.0f g", result.nutrition.carbsG))
+                        MacroRow("Protein", String.format(Locale.US, "%.0f g", result.nutrition.proteinG))
+                        MacroRow("Fat", String.format(Locale.US, "%.0f g", result.nutrition.fatG))
                         Text(
-                            "Carbs ${result.nutrition.carbsG} g / Protein ${result.nutrition.proteinG} g / Fat ${result.nutrition.fatG} g"
+                            result.nutrition.dietaryAdvice,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Text(result.nutrition.dietaryAdvice, style = MaterialTheme.typography.bodySmall)
                     }
                 }
 
-                OutlinedButton(onClick = viewModel::save, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = viewModel::save,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(100.dp)
+                ) {
                     Text("Save Profile")
-                }
-                if (state.saved) {
-                    Text("Saved", color = MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -158,5 +174,18 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+    }
+}
+
+@Composable
+private fun MacroRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth()) {
+        Text(
+            label,
+            Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(value, style = MaterialTheme.typography.labelLarge)
     }
 }
