@@ -85,21 +85,19 @@ class LocalRuleBasedMealPlanGeneratorTest {
     @Test
     fun `exclude produces a different plan when alternatives exist`() {
         val first = requireNotNull(generator(42).generate(profile, recipes))
-        val exclude = first.meals.flatMap { it.items }.map { it.recipeId }.toSet()
-        val second = requireNotNull(generator(42).generate(profile, recipes, exclude))
+        val firstIds = first.meals.flatMap { it.items }.map { it.recipeId }.toSet()
+        val second = requireNotNull(generator(42).generate(profile, recipes, firstIds))
+        val secondIds = second.meals.flatMap { it.items }.map { it.recipeId }.toSet()
 
-        assertTrue(
-            first.meals.flatMap { it.items }.map { it.recipeId }.toSet() !=
-                second.meals.flatMap { it.items }.map { it.recipeId }.toSet()
-        )
+        assertTrue(firstIds != secondIds)
+        assertEquals(1, firstIds.intersect(secondIds).size)
     }
 
     @Test
     fun `same seed produces same plan`() {
-        assertEquals(
-            generator(7).generate(profile, recipes),
-            generator(7).generate(profile, recipes)
-        )
+        val first = requireNotNull(generator(7).generate(profile, recipes))
+        val second = requireNotNull(generator(7).generate(profile, recipes))
+        assertEquals(first, second)
     }
 
     @Test
@@ -112,6 +110,60 @@ class LocalRuleBasedMealPlanGeneratorTest {
     fun `returns null when a meal pool is empty`() {
         val lunchDinnerOnly = recipes.filter { MealType.BREAKFAST !in it.mealTypes }
         assertNull(generator().generate(profile, lunchDinnerOnly))
+    }
+
+    @Test
+    fun `every meal contains one to three items`() {
+        val plan = requireNotNull(generator().generate(profile, recipes))
+        assertTrue(plan.meals.all { it.items.size in 1..3 })
+    }
+
+    @Test
+    fun `returns null for empty recipes`() {
+        assertNull(generator().generate(profile, emptyList()))
+    }
+
+    @Test
+    fun `returns null when duplicate-only pools make a plan impossible`() {
+        val only = recipe(
+            "only", "唯一菜", 500.0,
+            setOf(MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER)
+        )
+        assertNull(generator().generate(profile, listOf(only)))
+    }
+
+    @Test
+    fun `uses relaxed tolerance when no strict plan exists`() {
+        val relaxedProfile = UserProfile(Gender.MALE, 30, 190.0, 100.0, 2.0)
+        val plan = requireNotNull(generator(42).generate(relaxedProfile, recipes))
+
+        assertTrue(plan.meals.any { meal ->
+            abs(meal.totalCalories - meal.targetCalories) / meal.targetCalories > 0.25
+        })
+        plan.meals.forEach { meal ->
+            assertTrue(abs(meal.totalCalories - meal.targetCalories) / meal.targetCalories <= 0.35)
+        }
+        assertTrue(abs(plan.totalCalories - plan.targetCalories) / plan.targetCalories <= 0.15)
+    }
+
+    @Test
+    fun `returns best-effort fallback when no relaxed plan exists`() {
+        val fallbackProfile = UserProfile(Gender.MALE, 20, 195.0, 90.0, 2.0)
+        val plan = requireNotNull(generator(42).generate(fallbackProfile, recipes))
+
+        assertTrue(plan.meals.any { meal ->
+            abs(meal.totalCalories - meal.targetCalories) / meal.targetCalories > 0.35
+        })
+    }
+
+    @Test
+    fun `single-tag recipes only appear in their own meal`() {
+        val lunchOnly = recipe("l_only", "午餐专属", 400.0, setOf(MealType.LUNCH))
+        val dinnerOnly = recipe("d_only", "晚餐专属", 400.0, setOf(MealType.DINNER))
+        val plan = requireNotNull(generator(42).generate(profile, recipes + lunchOnly + dinnerOnly))
+
+        assertTrue(plan.meals[1].items.none { it.recipeId == "d_only" })
+        assertTrue(plan.meals[2].items.none { it.recipeId == "l_only" })
     }
 
     private fun recipe(

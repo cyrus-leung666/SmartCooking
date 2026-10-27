@@ -7,11 +7,17 @@ import com.example.smartcooking.domain.model.MealType
 import com.example.smartcooking.domain.model.RecipeSummary
 import com.example.smartcooking.domain.model.UserProfile
 import com.example.smartcooking.domain.usecase.CalculateBmiUseCase
+import java.util.PriorityQueue
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
 import kotlin.random.Random
 
+/**
+ * 本地三餐规划器。组合搜索是 CPU 密集型工作,调用方应在 Dispatchers.Default 执行。
+ * 每餐先保留最接近预算的 [MAX_COMBOS_PER_MEAL] 组;若严格/放宽都无解,逐步扩大上限重试。
+ * 菜谱池超过 [MAX_POOL_SIZE_PER_MEAL] 时按单品热量接近度预筛,控制组合规模。
+ */
 @Singleton
 class LocalRuleBasedMealPlanGenerator @Inject constructor(
     private val calculateBmiUseCase: CalculateBmiUseCase,
@@ -43,44 +49,28 @@ class LocalRuleBasedMealPlanGenerator @Inject constructor(
         val pools = mealTypes.map { type -> recipes.filter { type in it.mealTypes } }
         if (pools.any { it.isEmpty() }) return null
 
-        val combosByMeal = pools.mapIndexed { index, pool -> buildCombos(pool, budgets[index]) }
-        if (combosByMeal.any { it.isEmpty() }) return null
-
-        val candidates = mutableListOf<CandidatePlan>()
-        for (breakfast in combosByMeal[0]) {
-            for (lunch in combosByMeal[1]) {
-                for (dinner in combosByMeal[2]) {
-                    val items = breakfast.items + lunch.items + dinner.items
-                    val ids = items.map { it.recipeId }
-                    if (ids.size != ids.toSet().size) continue
-                    candidates += CandidatePlan(
-                        combos = listOf(breakfast, lunch, dinner),
-                        totalCalories = breakfast.calories + lunch.calories + dinner.calories
-                    )
-                }
+        var validPlans: List<CandidatePlan>? = null
+        var bestFallback: CandidatePlan? = null
+        for (limit in COMBO_LIMITS) {
+            val combosByMeal = pools.mapIndexed { index, pool ->
+                buildCombos(boundedPool(pool, budgets[index]), budgets[index], limit)
             }
-        }
-        if (candidates.isEmpty()) return null
+            if (combosByMeal.any { it.isEmpty() }) continue
 
-        val strict = candidates.filter {
-            isValid(it, budgets, target, STRICT_MEAL_TOLERANCE, STRICT_DAY_TOLERANCE)
-        }
-        val relaxed = if (strict.isEmpty()) {
-            candidates.filter {
-                isValid(it, budgets, target, RELAXED_MEAL_TOLERANCE, RELAXED_DAY_TOLERANCE)
+            val result = searchPlans(combosByMeal, budgets, target)
+            if (result.strict.isNotEmpty()) {
+                validPlans = result.strict
+                break
             }
-        } else {
-            emptyList()
+            if (result.relaxed.isNotEmpty()) {
+                validPlans = result.relaxed
+                break
+            }
+            bestFallback = result.bestFallback
         }
-        val fallback = if (strict.isEmpty() && relaxed.isEmpty()) {
-            listOfNotNull(candidates.minByOrNull { abs(it.totalCalories - target) })
-        } else {
-            emptyList()
-        }
-        val valid = strict.ifEmpty { relaxed }.ifEmpty { fallback }
-        if (valid.isEmpty()) return null
 
-        val selected = selectPlan(valid, exclude)
+        val candidates = validPlans ?: listOfNotNull(bestFallback).ifEmpty { return null }
+        val selected = selectPlan(candidates, exclude)
         return DailyMealPlan(
             targetCalories = target,
             meals = mealTypes.mapIndexed { index, type ->
@@ -93,26 +83,94 @@ class LocalRuleBasedMealPlanGenerator @Inject constructor(
         )
     }
 
-    private fun buildCombos(pool: List<RecipeSummary>, budget: Double): List<Combo> {
-        val combos = mutableListOf<Combo>()
+    /** 池过大时按单品热量与餐预算的接近度预筛,避免 O(n³) 枚举失控。 */
+    private fun boundedPool(pool: List<RecipeSummary>, budget: Double): List<RecipeSummary> =
+        if (pool.size <= MAX_POOL_SIZE_PER_MEAL) {
+            pool
+        } else {
+            pool.sortedBy { abs(it.totalCalories - budget) }.take(MAX_POOL_SIZE_PER_MEAL)
+        }
+
+    /** 用大小为 limit 的最大堆保留最接近预算的 1-3 样组合。 */
+    private fun buildCombos(pool: List<RecipeSummary>, budget: Double, limit: Int): List<Combo> {
+        val best = PriorityQueue<Combo>(compareByDescending { abs(it.calories - budget) })
+
+        fun consider(combo: Combo) {
+            val deviation = abs(combo.calories - budget)
+            if (best.size < limit) {
+                best.add(combo)
+            } else if (best.isNotEmpty() && deviation < abs(best.peek().calories - budget)) {
+                best.poll()
+                best.add(combo)
+            }
+        }
+
         for (i in pool.indices) {
             val a = pool[i]
-            combos += Combo(listOf(a), a.totalCalories)
+            consider(Combo(listOf(a), a.totalCalories))
             for (j in i + 1 until pool.size) {
                 val b = pool[j]
-                combos += Combo(listOf(a, b), a.totalCalories + b.totalCalories)
+                consider(Combo(listOf(a, b), a.totalCalories + b.totalCalories))
                 for (k in j + 1 until pool.size) {
                     val c = pool[k]
-                    combos += Combo(
-                        listOf(a, b, c),
-                        a.totalCalories + b.totalCalories + c.totalCalories
+                    consider(
+                        Combo(
+                            listOf(a, b, c),
+                            a.totalCalories + b.totalCalories + c.totalCalories
+                        )
                     )
                 }
             }
         }
-        return combos
-            .sortedBy { abs(it.calories - budget) }
-            .take(MAX_COMBOS_PER_MEAL)
+
+        return best.sortedWith(
+            compareBy<Combo> { abs(it.calories - budget) }
+                .thenBy { combo -> combo.items.joinToString(",") { it.recipeId } }
+        )
+    }
+
+    /**
+     * 流式搜索三餐组合:只保留严格/放宽合格的组合,以及全天偏差最小的兜底组合,
+     * 避免物化 limit³ 个候选对象。
+     */
+    private fun searchPlans(
+        combosByMeal: List<List<Combo>>,
+        budgets: List<Double>,
+        target: Double
+    ): PlanSearchResult {
+        val strict = mutableListOf<CandidatePlan>()
+        val relaxed = mutableListOf<CandidatePlan>()
+        var bestFallback: CandidatePlan? = null
+        var bestFallbackDeviation = Double.MAX_VALUE
+
+        for (breakfast in combosByMeal[0]) {
+            for (lunch in combosByMeal[1]) {
+                for (dinner in combosByMeal[2]) {
+                    val items = breakfast.items + lunch.items + dinner.items
+                    val ids = items.map { it.recipeId }
+                    if (ids.size != ids.toSet().size) continue
+
+                    val candidate = CandidatePlan(
+                        combos = listOf(breakfast, lunch, dinner),
+                        totalCalories = breakfast.calories + lunch.calories + dinner.calories
+                    )
+                    when {
+                        isValid(candidate, budgets, target, STRICT_MEAL_TOLERANCE, STRICT_DAY_TOLERANCE) ->
+                            strict += candidate
+                        isValid(candidate, budgets, target, RELAXED_MEAL_TOLERANCE, RELAXED_DAY_TOLERANCE) ->
+                            relaxed += candidate
+                    }
+
+                    val deviation = abs(candidate.totalCalories - target)
+                    if (deviation < bestFallbackDeviation) {
+                        bestFallback = candidate
+                        bestFallbackDeviation = deviation
+                    }
+                }
+            }
+        }
+
+        return PlanSearchResult(strict, relaxed, bestFallback)
     }
 
     private fun isValid(
@@ -146,14 +204,22 @@ class LocalRuleBasedMealPlanGenerator @Inject constructor(
         val totalCalories: Double
     )
 
+    private data class PlanSearchResult(
+        val strict: List<CandidatePlan>,
+        val relaxed: List<CandidatePlan>,
+        val bestFallback: CandidatePlan?
+    )
+
     private companion object {
         const val BREAKFAST_RATIO = 0.30
         const val LUNCH_RATIO = 0.40
         const val DINNER_RATIO = 0.30
         const val MAX_COMBOS_PER_MEAL = 40
+        const val MAX_POOL_SIZE_PER_MEAL = 60
         const val STRICT_MEAL_TOLERANCE = 0.25
         const val STRICT_DAY_TOLERANCE = 0.10
         const val RELAXED_MEAL_TOLERANCE = 0.35
         const val RELAXED_DAY_TOLERANCE = 0.15
+        val COMBO_LIMITS = intArrayOf(MAX_COMBOS_PER_MEAL, 80, 160)
     }
 }
