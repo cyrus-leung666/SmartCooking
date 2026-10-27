@@ -63,4 +63,19 @@ class SeedDataCalorieTest {
             SeedData.recipes.first { it.recipeId == "rec_scrambled_egg_tomato" }.mealTypes
         )
     }
+
+    @Test
+    fun `existing recipes keep the lunch dinner default`() {
+        val existingIds = listOf(
+            "rec_scrambled_egg_tomato",
+            "rec_steamed_chicken_broccoli",
+            "rec_pan_fried_salmon",
+            "rec_braised_beef_potato",
+            "rec_cold_cucumber",
+            "rec_tomato_egg_noodles"
+        )
+        existingIds.forEach { id ->
+            assertEquals("lunch,dinner", SeedData.recipes.first { it.recipeId == id }.mealTypes)
+        }
+    }
 }

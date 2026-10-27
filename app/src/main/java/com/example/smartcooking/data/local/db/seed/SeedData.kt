@@ -280,8 +280,5 @@ object SeedData {
         RecipeIngredientEntity("ri_24", "rec_steamed_rice", "ing_cooked_rice", "mth_ready", 200.0, 0.0)
     )
 
-    private fun toInstructionsJson(vararg steps: String): String =
-        steps.joinToString(prefix = "[\"", separator = "\",\"", postfix = "\"]") { step ->
-            step.replace("\\", "\\\\").replace("\"", "\\\"")
-        }
+    private fun toInstructionsJson(vararg steps: String): String = InstructionsCodec.encode(*steps)
 }
