@@ -16,6 +16,7 @@ SmartCooking 是一个**本地优先**的 Android 健康饮食应用：根据你
 - [构建与运行](#构建与运行)
 - [项目结构](#项目结构)
 - [当前推荐逻辑](#当前推荐逻辑)
+- [一日三餐计划逻辑](#一日三餐计划逻辑)
 - [后续：接入大模型 API](#后续接入大模型-api)
 - [已知限制](#已知限制)
 
@@ -33,7 +34,7 @@ SmartCooking 是一个**本地优先**的 Android 健康饮食应用：根据你
 | 热量计算器 | 自由组合食材、重量、烹饪方式与额外用油，计算整餐总热量与蛋白质 / 碳水 / 脂肪 |
 | 离线可用 | 首次启动自动写入 Room 种子数据，档案保存在 DataStore，无需联网即可使用全部功能 |
 
-> 界面文案当前为英文（Profile / Recipes / Calculator 三个底部标签），菜谱内容为中文。
+> 界面文案当前为英文（Profile / Plan / Recipes / Calculator 四个底部标签），菜谱内容为中文。
 
 ---
 
@@ -41,9 +42,10 @@ SmartCooking 是一个**本地优先**的 Android 健康饮食应用：根据你
 
 ### 1. 启动应用
 
-启动页展示约 1.8 秒后自动进入主界面，默认停留在 **Profile（个人档案）** 标签页。底部导航包含三个入口：
+启动页展示约 1.8 秒后自动进入主界面，默认停留在 **Profile（个人档案）** 标签页。底部导航包含四个入口：
 
 - **Profile**：填写身体数据、计算并保存热量目标
+- **Plan**：查看按热量目标生成的一日三餐计划
 - **Recipes**：浏览推荐与全部菜谱
 - **Calculator**：自定义餐食热量计算
 
@@ -180,7 +182,7 @@ app/src/main/java/com/example/smartcooking/
 ├── ui/                     # Compose 界面层
 │   ├── profile/            # 个人档案页
 │   ├── recipe/             # 菜谱列表、详情、热量计算器
-│   ├── plan/                # 一日三餐计划页
+│   ├── plan/               # 一日三餐计划页
 │   ├── components/         # RecipeCard、EnergyCard、DropdownSelector 等
 │   ├── navigation/         # 底部导航与路由
 │   └── theme/              # Material 3 主题（颜色 / 字体 / 形状）
@@ -188,14 +190,14 @@ app/src/main/java/com/example/smartcooking/
 │   ├── model/              # UserProfile、Recipe、BmiResult 等模型
 │   ├── usecase/            # 计算 BMI、搜索菜谱、获取推荐等用例
 │   ├── calculator/         # 菜谱热量计算
-│   ├── mealplan/            # 一日三餐计划生成接口
+│   ├── mealplan/           # 一日三餐计划生成接口
 │   └── ai/                 # AiRecipeAssistant 推荐接口（大模型接入点）
 ├── data/                   # 数据层
 │   ├── local/db/           # Room 数据库、DAO、种子数据
 │   ├── local/datastore/    # 用户档案持久化
 │   ├── repository/         # Repository 实现
 │   ├── api/                # Retrofit 接口（当前为后端留桩）
-│   ├── mealplan/            # 本地三餐计划生成实现
+│   ├── mealplan/           # 本地三餐计划生成实现
 │   └── ai/                 # LocalRuleBasedAiAssistant 本地规则实现
 └── di/                     # Hilt 依赖注入模块
 ```
@@ -213,7 +215,7 @@ app/src/main/java/com/example/smartcooking/
 5. 优先排除当前已展示的两道菜，再随机取 2 道。
 6. 下拉刷新会重新洗牌，因此每次下拉都可能得到不同推荐。
 
-> 这是“可解释、零成本、离线可用”的基线策略。下一节说明如何平滑替换为真正的大模型推荐。
+> 这是“可解释、零成本、离线可用”的基线策略。后续的大模型接入章节说明如何平滑替换为真正的大模型推荐。
 
 ---
 
@@ -356,7 +358,7 @@ response.content().stream()
 
 ### 场景二：对话式营养与烹饪助手（“互动”）
 
-在现有三个标签之外增加一个聊天入口（如 `Assistant`），让用户自然地提问：
+在现有四个标签之外增加一个聊天入口（如 `Assistant`），让用户自然地提问：
 
 - “今天中午吃了番茄炒蛋和一碗米饭，还剩多少热量？”
 - “冰箱里只有鸡胸肉、西兰花和鸡蛋，能做什么？”
