@@ -110,7 +110,7 @@ private fun DetailContent(
         Text(d.title, style = MaterialTheme.typography.headlineSmall)
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            InfoChip("${d.cookingTimeMinutes} min")
+            InfoChip(if (d.cookingTimeMinutes > 0) "${d.cookingTimeMinutes} min" else "Ready to eat")
             InfoChip(difficultyLabel(d.difficulty))
             InfoChip(String.format(Locale.US, "%.0f kcal", detail.calories.totalCalories))
         }

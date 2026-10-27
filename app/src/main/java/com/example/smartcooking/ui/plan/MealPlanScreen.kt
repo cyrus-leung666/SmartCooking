@@ -1,5 +1,6 @@
 package com.example.smartcooking.ui.plan
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +35,7 @@ import com.example.smartcooking.domain.mealplan.PlannedMeal
 import com.example.smartcooking.domain.model.MealType
 import com.example.smartcooking.ui.components.RecipeCard
 import java.util.Locale
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,6 +93,7 @@ fun MealPlanScreen(
                             ) {
                                 Text("No meal plan available.")
                                 Button(onClick = viewModel::regenerate) { Text("Retry") }
+                                OutlinedButton(onClick = onGoToProfile) { Text("Go to Profile") }
                             }
                         }
                     }
@@ -133,15 +137,23 @@ private fun PlanSummaryCard(plan: DailyMealPlan, onRegenerate: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-                OutlinedButton(onClick = onRegenerate) { Text("Regenerate") }
+                OutlinedButton(
+                    onClick = onRegenerate,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onPrimaryContainer)
+                ) { Text("Regenerate") }
             }
+            val delta = plan.totalCalories - plan.targetCalories
+            val deltaLabel = if (abs(delta) < 0.5) "0" else String.format(Locale.US, "%+.0f", delta)
             Text(
                 String.format(
                     Locale.US,
-                    "%.0f kcal target · %.0f kcal planned (%+.0f)",
+                    "%.0f kcal target · %.0f kcal planned (%s)",
                     plan.targetCalories,
                     plan.totalCalories,
-                    plan.totalCalories - plan.targetCalories
+                    deltaLabel
                 ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -155,7 +167,7 @@ private fun PlanSummaryCard(plan: DailyMealPlan, onRegenerate: () -> Unit) {
                     plan.fatG
                 ),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     }

@@ -103,13 +103,13 @@ private fun RecipeThumbnail(recipe: RecipeSummary, modifier: Modifier = Modifier
     when {
         res != null -> Image(
             painter = painterResource(res),
-            contentDescription = recipe.title,
+            contentDescription = null,
             modifier = modifier.clip(shape),
             contentScale = ContentScale.Crop
         )
         recipe.coverImageUrl.isNotBlank() -> AsyncImage(
             model = recipe.coverImageUrl,
-            contentDescription = recipe.title,
+            contentDescription = null,
             modifier = modifier.clip(shape),
             contentScale = ContentScale.Crop
         )
