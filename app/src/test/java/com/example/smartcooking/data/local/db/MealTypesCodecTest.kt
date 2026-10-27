@@ -22,7 +22,28 @@ class MealTypesCodecTest {
     @Test
     fun `falls back to lunch and dinner for empty or unknown input`() {
         assertEquals(setOf(MealType.LUNCH, MealType.DINNER), MealTypesCodec.decode(""))
+        assertEquals(setOf(MealType.LUNCH, MealType.DINNER), MealTypesCodec.decode("   "))
         assertEquals(setOf(MealType.LUNCH, MealType.DINNER), MealTypesCodec.decode("snack"))
+    }
+
+    @Test
+    fun `decodes tags ignoring case and whitespace`() {
+        assertEquals(
+            setOf(MealType.BREAKFAST, MealType.DINNER),
+            MealTypesCodec.decode(" Breakfast , DINNER ")
+        )
+    }
+
+    @Test
+    fun `encodes in canonical lowercase ordinal order`() {
+        assertEquals(
+            "lunch,dinner",
+            MealTypesCodec.encode(setOf(MealType.DINNER, MealType.LUNCH))
+        )
+        assertEquals(
+            "breakfast,lunch,dinner",
+            MealTypesCodec.encode(MealType.entries.toSet())
+        )
     }
 
     @Test
