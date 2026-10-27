@@ -15,9 +15,9 @@ import kotlin.random.Random
 
 /**
  * 本地三餐规划器。组合搜索是 CPU 密集型工作,调用方应在 Dispatchers.Default 执行。
- * 每餐先保留最接近预算的 [MAX_COMBOS_PER_MEAL] 组;若严格/放宽都无解,逐步扩大上限重试。
- * 若常规截断搜索无解,会移除所有保留组合共同包含的菜谱后补充组合重试。
- * 菜谱池超过 [MAX_POOL_SIZE_PER_MEAL] 时按单品热量接近度预筛,控制组合规模。
+ * 每餐先保留最接近预算的 [MAX_COMBOS_PER_MEAL] 组;若严格无解(即使已有放宽解),
+ * 继续扩大上限寻找严格解;常规有界搜索完全无解时,移除共同菜谱后做一次多样性补救。
+ * 菜谱池(含补救路径)超过 [MAX_POOL_SIZE_PER_MEAL] 时按单品热量接近度预筛,控制组合规模。
  */
 @Singleton
 class LocalRuleBasedMealPlanGenerator @Inject constructor(
@@ -228,7 +228,12 @@ class LocalRuleBasedMealPlanGenerator @Inject constructor(
                 combos
             } else {
                 val withoutCommon = pools[index].filterNot { it.recipeId in commonIds }
-                (combos + buildCombos(withoutCommon, budgets[index], MAX_COMBOS_PER_MEAL))
+                val diverseCombos = buildCombos(
+                    boundedPool(withoutCommon, budgets[index]),
+                    budgets[index],
+                    MAX_COMBOS_PER_MEAL
+                )
+                (combos + diverseCombos)
                     .distinctBy { combo -> combo.items.map { it.recipeId } }
             }
         }

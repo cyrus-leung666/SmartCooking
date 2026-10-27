@@ -178,6 +178,8 @@ class LocalRuleBasedMealPlanGeneratorTest {
         val plan = requireNotNull(generator(42).generate(profile, breakfastOnly + shared))
 
         assertTrue(plan.meals.all { it.items.isNotEmpty() })
+        val ids = plan.meals.flatMap { meal -> meal.items.map { it.recipeId } }
+        assertEquals(ids.size, ids.toSet().size)
     }
 
     @Test
@@ -193,6 +195,8 @@ class LocalRuleBasedMealPlanGeneratorTest {
         val plan = requireNotNull(generator(42).generate(relaxedProfile, breakfastOnly + shared))
 
         assertTrue(plan.meals.all { it.items.isNotEmpty() })
+        val ids = plan.meals.flatMap { meal -> meal.items.map { it.recipeId } }
+        assertEquals(ids.size, ids.toSet().size)
     }
 
     @Test
@@ -220,6 +224,23 @@ class LocalRuleBasedMealPlanGeneratorTest {
 
         assertTrue(plan.meals[0].items.any { it.recipeId == "b470" })
         assertTrue(abs(plan.totalCalories - plan.targetCalories) / plan.targetCalories <= 0.10)
+    }
+
+    @Test
+    fun `diversity rescue respects the pool cap for very large pools`() {
+        val shared = listOf(
+            recipe("big_main", "大池主菜", 600.0, lunchDinner())
+        ) + (1..61).map { i ->
+            recipe("big_side_$i", "大池配菜$i", 50.0 + i * 2.0, lunchDinner())
+        }
+        val breakfastOnly = recipes.filter { MealType.BREAKFAST in it.mealTypes }
+        val relaxedProfile = UserProfile(Gender.MALE, 30, 190.0, 100.0, 2.0)
+
+        val plan = requireNotNull(generator(42).generate(relaxedProfile, breakfastOnly + shared))
+        val ids = plan.meals.flatMap { meal -> meal.items.map { it.recipeId } }
+
+        assertEquals(ids.size, ids.toSet().size)
+        assertTrue(plan.meals.all { it.items.isNotEmpty() })
     }
 
     private fun recipe(
