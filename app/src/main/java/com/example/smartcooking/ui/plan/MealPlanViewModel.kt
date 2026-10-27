@@ -74,12 +74,19 @@ class MealPlanViewModel @Inject constructor(
 
     private fun refresh() {
         if (_uiState.value.refreshing) return
-        _uiState.update { it.copy(refreshing = true) }
+        _uiState.update { it.copy(refreshing = true, error = null) }
         load()
     }
 
     private fun load() {
         loadJob?.cancel()
+        _uiState.update { state ->
+            if (state.profileMissing) {
+                state
+            } else {
+                state.copy(loading = state.plan == null, error = null)
+            }
+        }
         loadJob = viewModelScope.launch {
             val exclude = _uiState.value.plan
                 ?.meals
@@ -106,6 +113,7 @@ class MealPlanViewModel @Inject constructor(
                         seedCompleted -> state.copy(
                             loading = false,
                             refreshing = false,
+                            plan = null,
                             error = "Unable to generate a meal plan. Please check your profile and try again."
                         )
                         else -> state.copy(
