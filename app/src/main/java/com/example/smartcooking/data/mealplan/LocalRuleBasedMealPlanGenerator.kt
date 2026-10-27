@@ -99,9 +99,12 @@ class LocalRuleBasedMealPlanGenerator @Inject constructor(
             val deviation = abs(combo.calories - budget)
             if (best.size < limit) {
                 best.add(combo)
-            } else if (best.isNotEmpty() && deviation < abs(best.peek().calories - budget)) {
-                best.poll()
-                best.add(combo)
+            } else {
+                val worst = best.peek()
+                if (worst != null && deviation < abs(worst.calories - budget)) {
+                    best.poll()
+                    best.add(combo)
+                }
             }
         }
 
