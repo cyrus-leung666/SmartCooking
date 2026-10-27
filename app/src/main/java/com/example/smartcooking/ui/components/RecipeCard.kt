@@ -64,7 +64,11 @@ fun RecipeCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    "${recipe.cookingTimeMinutes} min · ${difficultyLabel(recipe.difficulty)}",
+                    if (recipe.cookingTimeMinutes > 0) {
+                        "${recipe.cookingTimeMinutes} min · ${difficultyLabel(recipe.difficulty)}"
+                    } else {
+                        difficultyLabel(recipe.difficulty)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

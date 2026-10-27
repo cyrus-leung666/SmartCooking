@@ -3,6 +3,7 @@ package com.example.smartcooking.ui.navigation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material3.Icon
@@ -21,6 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.smartcooking.ui.plan.MealPlanScreen
 import com.example.smartcooking.ui.profile.ProfileScreen
 import com.example.smartcooking.ui.recipe.CalorieCalculatorScreen
 import com.example.smartcooking.ui.recipe.RecipeDetailScreen
@@ -28,6 +30,7 @@ import com.example.smartcooking.ui.recipe.RecipeListScreen
 
 object Routes {
     const val PROFILE = "profile"
+    const val MEAL_PLAN = "meal_plan"
     const val RECIPE_LIST = "recipe_list"
     const val CALCULATOR = "calculator"
     const val RECIPE_DETAIL = "recipe_detail/{recipeId}"
@@ -38,6 +41,7 @@ private data class BottomNavItem(val route: String, val label: String, val icon:
 
 private val bottomItems = listOf(
     BottomNavItem(Routes.PROFILE, "Profile", Icons.Filled.Person),
+    BottomNavItem(Routes.MEAL_PLAN, "Plan", Icons.Filled.CalendarMonth),
     BottomNavItem(Routes.RECIPE_LIST, "Recipes", Icons.Filled.RestaurantMenu),
     BottomNavItem(Routes.CALCULATOR, "Calculator", Icons.Filled.Calculate)
 )
@@ -50,7 +54,7 @@ fun AppNavigation() {
 
     Scaffold(
         bottomBar = {
-            if (currentRoute in listOf(Routes.PROFILE, Routes.RECIPE_LIST, Routes.CALCULATOR)) {
+            if (currentRoute in listOf(Routes.PROFILE, Routes.MEAL_PLAN, Routes.RECIPE_LIST, Routes.CALCULATOR)) {
                 NavigationBar {
                     bottomItems.forEach { item ->
                         NavigationBarItem(
@@ -76,6 +80,20 @@ fun AppNavigation() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Routes.PROFILE) { ProfileScreen() }
+            composable(Routes.MEAL_PLAN) {
+                MealPlanScreen(
+                    onRecipeClick = { recipeId ->
+                        navController.navigate(Routes.recipeDetail(recipeId))
+                    },
+                    onGoToProfile = {
+                        navController.navigate(Routes.PROFILE) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
             composable(Routes.RECIPE_LIST) {
                 RecipeListScreen(onRecipeClick = { recipeId ->
                     navController.navigate(Routes.recipeDetail(recipeId))
