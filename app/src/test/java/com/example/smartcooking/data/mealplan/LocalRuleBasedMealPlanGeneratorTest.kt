@@ -166,6 +166,62 @@ class LocalRuleBasedMealPlanGeneratorTest {
         assertTrue(plan.meals[2].items.none { it.recipeId == "l_only" })
     }
 
+    @Test
+    fun `expanded limits find a plan when top forty combos all share one recipe`() {
+        val shared = listOf(
+            recipe("main10", "共享主菜", 600.0, lunchDinner())
+        ) + (1..9).map { i ->
+            recipe("side10_$i", "共享配菜$i", 50.0 + i * 10.0, lunchDinner())
+        }
+        val breakfastOnly = recipes.filter { MealType.BREAKFAST in it.mealTypes }
+
+        val plan = requireNotNull(generator(42).generate(profile, breakfastOnly + shared))
+
+        assertTrue(plan.meals.all { it.items.isNotEmpty() })
+    }
+
+    @Test
+    fun `diversity rescue finds a plan when top one hundred sixty combos all share one recipe`() {
+        val shared = listOf(
+            recipe("main", "共享主菜", 600.0, lunchDinner())
+        ) + (1..18).map { i ->
+            recipe("side_$i", "共享配菜$i", 50.0 + i * 10.0, lunchDinner())
+        }
+        val breakfastOnly = recipes.filter { MealType.BREAKFAST in it.mealTypes }
+        val relaxedProfile = UserProfile(Gender.MALE, 30, 190.0, 100.0, 2.0)
+
+        val plan = requireNotNull(generator(42).generate(relaxedProfile, breakfastOnly + shared))
+
+        assertTrue(plan.meals.all { it.items.isNotEmpty() })
+    }
+
+    @Test
+    fun `prefers a strict plan found at a larger limit over an early relaxed plan`() {
+        val strictProfile = UserProfile(Gender.MALE, 24, 175.0, 70.0, 1.2)
+        val breakfastPool = listOf(
+            recipe("b470", "小份早餐", 470.0, setOf(MealType.BREAKFAST))
+        ) + (1..10).map { i ->
+            recipe("b300_$i", "早餐$i", 300.0, setOf(MealType.BREAKFAST))
+        }
+        val lunchPool = listOf(
+            recipe("l950", "午餐主菜", 950.0, setOf(MealType.LUNCH))
+        ) + (1..10).map { i ->
+            recipe("l100_$i", "午餐配$i", 100.0, setOf(MealType.LUNCH))
+        }
+        val dinnerPool = listOf(
+            recipe("d750", "晚餐主菜", 750.0, setOf(MealType.DINNER))
+        ) + (1..10).map { i ->
+            recipe("d100_$i", "晚餐配$i", 100.0, setOf(MealType.DINNER))
+        }
+
+        val plan = requireNotNull(
+            generator(42).generate(strictProfile, breakfastPool + lunchPool + dinnerPool)
+        )
+
+        assertTrue(plan.meals[0].items.any { it.recipeId == "b470" })
+        assertTrue(abs(plan.totalCalories - plan.targetCalories) / plan.targetCalories <= 0.10)
+    }
+
     private fun recipe(
         id: String,
         title: String,

@@ -16,6 +16,7 @@ import kotlin.random.Random
 /**
  * 本地三餐规划器。组合搜索是 CPU 密集型工作,调用方应在 Dispatchers.Default 执行。
  * 每餐先保留最接近预算的 [MAX_COMBOS_PER_MEAL] 组;若严格/放宽都无解,逐步扩大上限重试。
+ * 若常规截断搜索无解,会移除所有保留组合共同包含的菜谱后补充组合重试。
  * 菜谱池超过 [MAX_POOL_SIZE_PER_MEAL] 时按单品热量接近度预筛,控制组合规模。
  */
 @Singleton
@@ -49,8 +50,10 @@ class LocalRuleBasedMealPlanGenerator @Inject constructor(
         val pools = mealTypes.map { type -> recipes.filter { type in it.mealTypes } }
         if (pools.any { it.isEmpty() }) return null
 
-        var validPlans: List<CandidatePlan>? = null
+        var strictPlans: List<CandidatePlan>? = null
+        var relaxedPlans: List<CandidatePlan>? = null
         var bestFallback: CandidatePlan? = null
+
         for (limit in COMBO_LIMITS) {
             val combosByMeal = pools.mapIndexed { index, pool ->
                 buildCombos(boundedPool(pool, budgets[index]), budgets[index], limit)
@@ -59,17 +62,25 @@ class LocalRuleBasedMealPlanGenerator @Inject constructor(
 
             val result = searchPlans(combosByMeal, budgets, target)
             if (result.strict.isNotEmpty()) {
-                validPlans = result.strict
+                strictPlans = result.strict
                 break
             }
-            if (result.relaxed.isNotEmpty()) {
-                validPlans = result.relaxed
-                break
+            if (relaxedPlans == null && result.relaxed.isNotEmpty()) {
+                relaxedPlans = result.relaxed
             }
             bestFallback = result.bestFallback
         }
 
-        val candidates = validPlans ?: listOfNotNull(bestFallback).ifEmpty { return null }
+        if (strictPlans == null && relaxedPlans == null && bestFallback == null) {
+            val rescue = rescuePlan(pools, budgets, target)
+            if (rescue != null) {
+                strictPlans = rescue.strict.ifEmpty { null }
+                relaxedPlans = rescue.relaxed.ifEmpty { null }
+                bestFallback = rescue.bestFallback
+            }
+        }
+
+        val candidates = strictPlans ?: relaxedPlans ?: listOfNotNull(bestFallback).ifEmpty { return null }
         val selected = selectPlan(candidates, exclude)
         return DailyMealPlan(
             targetCalories = target,
@@ -196,6 +207,43 @@ class LocalRuleBasedMealPlanGenerator @Inject constructor(
         val minOverlap = grouped.keys.minOrNull() ?: 0
         return grouped[minOverlap].orEmpty().ifEmpty { plans }.random(random)
     }
+
+    /**
+     * 当常规有界搜索完全找不到不重复三餐时,移除 "所有保留组合共同包含的菜谱",
+     * 再从剩余池中补充组合重新搜索。用于午餐/晚餐共享同一道主菜等高度重复的池。
+     */
+    private fun rescuePlan(
+        pools: List<List<RecipeSummary>>,
+        budgets: List<Double>,
+        target: Double
+    ): PlanSearchResult? {
+        val baseCombos = pools.mapIndexed { index, pool ->
+            buildCombos(boundedPool(pool, budgets[index]), budgets[index], MAX_COMBOS_PER_MEAL)
+        }
+        if (baseCombos.any { it.isEmpty() }) return null
+
+        val rescueCombos = baseCombos.mapIndexed { index, combos ->
+            val commonIds = commonRecipeIds(combos)
+            if (commonIds.isEmpty()) {
+                combos
+            } else {
+                val withoutCommon = pools[index].filterNot { it.recipeId in commonIds }
+                (combos + buildCombos(withoutCommon, budgets[index], MAX_COMBOS_PER_MEAL))
+                    .distinctBy { combo -> combo.items.map { it.recipeId } }
+            }
+        }
+        val result = searchPlans(rescueCombos, budgets, target)
+        return if (result.strict.isNotEmpty() || result.relaxed.isNotEmpty() || result.bestFallback != null) {
+            result
+        } else {
+            null
+        }
+    }
+
+    private fun commonRecipeIds(combos: List<Combo>): Set<String> =
+        combos.map { combo -> combo.items.map { it.recipeId }.toSet() }
+            .reduceOrNull { acc, ids -> acc intersect ids }
+            .orEmpty()
 
     private data class Combo(
         val items: List<RecipeSummary>,
