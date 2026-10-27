@@ -85,6 +85,7 @@ class MealPlanViewModelTest {
         val generator = FakeGenerator(null)
 
         val viewModel = viewModel(profile, seedCompleted = false, generator = generator)
+        generator.callCount.first { it > 0 }
         advanceUntilIdle()
 
         assertTrue(viewModel.uiState.value.loading)
@@ -92,16 +93,23 @@ class MealPlanViewModelTest {
     }
 
     @Test
-    fun `null plan after seed completes sets an error and clears the plan`() = runTest(dispatcher) {
-        val generator = FakeGenerator(null)
+    fun `null plan after seed completes clears the previous plan and sets an error`() = runTest(dispatcher) {
+        val generator = FakeGenerator(plan)
+        val userRepository = FakeUserRepository(profile)
+        val viewModel = viewModel(
+            profile,
+            seedCompleted = true,
+            generator = generator,
+            userRepository = userRepository
+        )
+        viewModel.uiState.first { it.plan != null }
 
-        val viewModel = viewModel(profile, seedCompleted = true, generator = generator)
-        // WithContext(Dispatchers.Default) escapes the test scheduler; await the settled state.
-        viewModel.uiState.first { !it.loading }
+        generator.result = null
+        userRepository.profile.value = profile.copy(weightKg = 60.0)
+        viewModel.uiState.first { it.error != null }
 
-        assertFalse(viewModel.uiState.value.loading)
-        assertNotNull(viewModel.uiState.value.error)
         assertNull(viewModel.uiState.value.plan)
+        assertFalse(viewModel.uiState.value.loading)
     }
 
     @Test
@@ -126,12 +134,12 @@ class MealPlanViewModelTest {
             userRepository = userRepository
         )
         viewModel.uiState.first { it.plan != null }
-        val callsAfterInit = generator.calls
+        val callsAfterInit = generator.callCount.value
 
         userRepository.profile.value = profile.copy(weightKg = 60.0)
         generator.callCount.first { it > callsAfterInit }
 
-        assertTrue(generator.calls > callsAfterInit)
+        assertTrue(generator.callCount.value > callsAfterInit)
     }
 
     @Test
@@ -143,6 +151,8 @@ class MealPlanViewModelTest {
 
         generator.result = plan
         viewModel.onRefresh()
+        assertNull(viewModel.uiState.value.error)
+        advanceUntilIdle()
         viewModel.uiState.first { it.plan != null }
 
         assertNull(viewModel.uiState.value.error)
