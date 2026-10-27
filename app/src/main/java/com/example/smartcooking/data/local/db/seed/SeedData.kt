@@ -4,7 +4,6 @@ import com.example.smartcooking.data.local.db.entity.CookingMethodEntity
 import com.example.smartcooking.data.local.db.entity.IngredientEntity
 import com.example.smartcooking.data.local.db.entity.RecipeEntity
 import com.example.smartcooking.data.local.db.entity.RecipeIngredientEntity
-import org.json.JSONArray
 
 object SeedData {
 
@@ -22,7 +21,13 @@ object SeedData {
         IngredientEntity("ing_tomato", "番茄", 15.0, 0.9, 3.3, 0.2, "蔬菜"),
         IngredientEntity("ing_cucumber", "黄瓜", 16.0, 0.8, 2.9, 0.2, "蔬菜"),
         IngredientEntity("ing_oil", "食用油", 900.0, 0.0, 0.0, 100.0, "调味品"),
-        IngredientEntity("ing_noodles", "挂面(生)", 353.0, 11.4, 74.4, 1.4, "主食")
+        IngredientEntity("ing_noodles", "挂面(生)", 353.0, 11.4, 74.4, 1.4, "主食"),
+        IngredientEntity("ing_oats", "燕麦片", 377.0, 13.2, 66.3, 6.7, "主食"),
+        IngredientEntity("ing_milk", "牛奶", 61.0, 3.2, 4.8, 3.3, "蛋奶类"),
+        IngredientEntity("ing_whole_wheat_bread", "全麦面包", 246.0, 9.0, 46.0, 3.5, "主食"),
+        IngredientEntity("ing_cooked_rice", "米饭(熟)", 116.0, 2.6, 25.9, 0.3, "主食"),
+        IngredientEntity("ing_banana", "香蕉", 93.0, 1.4, 22.0, 0.2, "水果"),
+        IngredientEntity("ing_yogurt", "原味酸奶", 72.0, 3.5, 4.7, 3.6, "蛋奶类")
     )
 
     val cookingMethods = listOf(
@@ -33,7 +38,8 @@ object SeedData {
         CookingMethodEntity("mth_stir_fry", "炒", 0.70),
         CookingMethodEntity("mth_stew", "炖", 0.45),
         CookingMethodEntity("mth_roast", "烤", 0.35),
-        CookingMethodEntity("mth_deep_fry", "炸", 1.35)
+        CookingMethodEntity("mth_deep_fry", "炸", 1.35),
+        CookingMethodEntity("mth_ready", "即食", 0.0)
     )
 
     val recipes = listOf(
@@ -141,6 +147,109 @@ object SeedData {
                 "面条装入碗中,浇上番茄蛋汤,加少许盐调味。"
             ),
             createdAt = CREATED_AT
+        ),
+        RecipeEntity(
+            recipeId = "rec_milk_oatmeal",
+            title = "牛奶燕麦粥",
+            description = "温热牛奶冲入燕麦,5 分钟完成的高纤维早餐。",
+            coverImageUrl = "",
+            cookingTimeMinutes = 5,
+            difficulty = "简单",
+            instructions = toInstructionsJson(
+                "燕麦片倒入碗中。",
+                "牛奶加热至温热(不沸腾),冲入燕麦片,搅拌均匀。",
+                "静置 3 分钟至燕麦吸水变软即可食用。"
+            ),
+            createdAt = CREATED_AT,
+            mealTypes = "breakfast"
+        ),
+        RecipeEntity(
+            recipeId = "rec_boiled_egg",
+            title = "水煮蛋",
+            description = "最省事的优质蛋白来源,水煮 8 分钟即可。",
+            coverImageUrl = "",
+            cookingTimeMinutes = 8,
+            difficulty = "简单",
+            instructions = toInstructionsJson(
+                "鸡蛋放入锅中,加冷水没过鸡蛋。",
+                "大火烧开后转中火煮 8 分钟。",
+                "捞出过凉水,剥壳即可。"
+            ),
+            createdAt = CREATED_AT,
+            mealTypes = "breakfast"
+        ),
+        RecipeEntity(
+            recipeId = "rec_whole_wheat_bread",
+            title = "全麦面包",
+            description = "两片全麦面包,搭配牛奶或鸡蛋的早餐主食。",
+            coverImageUrl = "",
+            cookingTimeMinutes = 0,
+            difficulty = "简单",
+            instructions = toInstructionsJson("直接食用;可放入烤箱或吐司机加热 1 分钟。"),
+            createdAt = CREATED_AT,
+            mealTypes = "breakfast"
+        ),
+        RecipeEntity(
+            recipeId = "rec_milk",
+            title = "牛奶",
+            description = "一杯温牛奶,补充蛋白质与钙。",
+            coverImageUrl = "",
+            cookingTimeMinutes = 0,
+            difficulty = "简单",
+            instructions = toInstructionsJson("倒入杯中,可直接饮用或加热至温热。"),
+            createdAt = CREATED_AT,
+            mealTypes = "breakfast"
+        ),
+        RecipeEntity(
+            recipeId = "rec_banana",
+            title = "香蕉",
+            description = "随手可吃的早餐水果,补充碳水与钾。",
+            coverImageUrl = "",
+            cookingTimeMinutes = 0,
+            difficulty = "简单",
+            instructions = toInstructionsJson("剥皮后直接食用。"),
+            createdAt = CREATED_AT,
+            mealTypes = "breakfast"
+        ),
+        RecipeEntity(
+            recipeId = "rec_tomato_egg_sandwich",
+            title = "番茄鸡蛋三明治",
+            description = "全麦面包夹煎蛋与番茄,5 分钟搞定的热早餐。",
+            coverImageUrl = "",
+            cookingTimeMinutes = 5,
+            difficulty = "简单",
+            instructions = toInstructionsJson(
+                "锅中放 3g 食用油,鸡蛋煎至凝固。",
+                "全麦面包片放平,依次铺上煎蛋与番茄片。",
+                "盖上另一片面包,对角切开即可。"
+            ),
+            createdAt = CREATED_AT,
+            mealTypes = "breakfast"
+        ),
+        RecipeEntity(
+            recipeId = "rec_yogurt_fruit_cup",
+            title = "酸奶水果杯",
+            description = "酸奶配香蕉,清爽的轻早餐或加餐。",
+            coverImageUrl = "",
+            cookingTimeMinutes = 0,
+            difficulty = "简单",
+            instructions = toInstructionsJson(
+                "香蕉去皮切片。",
+                "酸奶倒入杯中,铺上香蕉片即可。"
+            ),
+            createdAt = CREATED_AT,
+            mealTypes = "breakfast"
+        ),
+        RecipeEntity(
+            recipeId = "rec_steamed_rice",
+            title = "米饭",
+            description = "一碗白米饭,午/晚餐的基础主食。",
+            coverImageUrl = "",
+            cookingTimeMinutes = 0,
+            difficulty = "简单",
+            instructions = toInstructionsJson("直接盛入碗中食用;可提前用电饭煲煮好。"),
+            createdAt = CREATED_AT,
+            mealTypes = "lunch,dinner"
         )
     )
 
@@ -156,8 +265,23 @@ object SeedData {
         RecipeIngredientEntity("ri_09", "rec_cold_cucumber", "ing_cucumber", "mth_cold", 250.0, 5.0),
         RecipeIngredientEntity("ri_10", "rec_tomato_egg_noodles", "ing_noodles", "mth_boil", 100.0, 0.0),
         RecipeIngredientEntity("ri_11", "rec_tomato_egg_noodles", "ing_egg", "mth_stir_fry", 100.0, 8.0),
-        RecipeIngredientEntity("ri_12", "rec_tomato_egg_noodles", "ing_tomato", "mth_stir_fry", 150.0, 0.0)
+        RecipeIngredientEntity("ri_12", "rec_tomato_egg_noodles", "ing_tomato", "mth_stir_fry", 150.0, 0.0),
+        RecipeIngredientEntity("ri_13", "rec_milk_oatmeal", "ing_oats", "mth_boil", 40.0, 0.0),
+        RecipeIngredientEntity("ri_14", "rec_milk_oatmeal", "ing_milk", "mth_ready", 250.0, 0.0),
+        RecipeIngredientEntity("ri_15", "rec_boiled_egg", "ing_egg", "mth_boil", 100.0, 0.0),
+        RecipeIngredientEntity("ri_16", "rec_whole_wheat_bread", "ing_whole_wheat_bread", "mth_ready", 60.0, 0.0),
+        RecipeIngredientEntity("ri_17", "rec_milk", "ing_milk", "mth_ready", 250.0, 0.0),
+        RecipeIngredientEntity("ri_18", "rec_banana", "ing_banana", "mth_ready", 100.0, 0.0),
+        RecipeIngredientEntity("ri_19", "rec_tomato_egg_sandwich", "ing_whole_wheat_bread", "mth_ready", 60.0, 0.0),
+        RecipeIngredientEntity("ri_20", "rec_tomato_egg_sandwich", "ing_egg", "mth_pan_fry", 50.0, 3.0),
+        RecipeIngredientEntity("ri_21", "rec_tomato_egg_sandwich", "ing_tomato", "mth_ready", 50.0, 0.0),
+        RecipeIngredientEntity("ri_22", "rec_yogurt_fruit_cup", "ing_yogurt", "mth_ready", 150.0, 0.0),
+        RecipeIngredientEntity("ri_23", "rec_yogurt_fruit_cup", "ing_banana", "mth_ready", 50.0, 0.0),
+        RecipeIngredientEntity("ri_24", "rec_steamed_rice", "ing_cooked_rice", "mth_ready", 200.0, 0.0)
     )
 
-    private fun toInstructionsJson(vararg steps: String): String = JSONArray(steps).toString()
+    private fun toInstructionsJson(vararg steps: String): String =
+        steps.joinToString(prefix = "[\"", separator = "\",\"", postfix = "\"]") { step ->
+            step.replace("\\", "\\\\").replace("\"", "\\\"")
+        }
 }

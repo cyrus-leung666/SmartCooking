@@ -13,5 +13,6 @@ data class RecipeEntity(
     @ColumnInfo(name = "cooking_time_minutes") val cookingTimeMinutes: Int,
     @ColumnInfo(name = "difficulty") val difficulty: String,
     @ColumnInfo(name = "instructions") val instructions: String, // JSON 字符串数组(规格书 §4 JSONB 的本地映射)
-    @ColumnInfo(name = "created_at") val createdAt: Long
+    @ColumnInfo(name = "created_at") val createdAt: Long,
+    @ColumnInfo(name = "meal_types") val mealTypes: String = "lunch,dinner"
 )

@@ -1,6 +1,7 @@
 package com.example.smartcooking.data.repository
 
 import android.util.Log
+import com.example.smartcooking.data.local.db.MealTypesCodec
 import com.example.smartcooking.data.local.db.dao.RecipeDao
 import com.example.smartcooking.data.local.db.dao.RecipeIngredientDao
 import com.example.smartcooking.data.local.db.dao.RecipeIngredientWithNames
@@ -73,13 +74,18 @@ class RecipeRepositoryImpl @Inject constructor(
 
     private suspend fun RecipeEntity.toSummary(): RecipeSummary {
         val items = recipeIngredientDao.getItemsForRecipe(recipeId).map { it.toRecipeIngredientItem() }
+        val calories = RecipeCalorieCalculator.calculate(items)
         return RecipeSummary(
             recipeId = recipeId,
             title = title,
             coverImageUrl = coverImageUrl,
             cookingTimeMinutes = cookingTimeMinutes,
             difficulty = difficulty,
-            totalCalories = RecipeCalorieCalculator.calculate(items).totalCalories
+            totalCalories = calories.totalCalories,
+            mealTypes = MealTypesCodec.decode(mealTypes),
+            proteinG = calories.totalProteinG,
+            carbsG = calories.totalCarbsG,
+            fatG = calories.totalFatG
         )
     }
 
