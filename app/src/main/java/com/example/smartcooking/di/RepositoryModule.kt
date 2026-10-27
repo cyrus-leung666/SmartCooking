@@ -2,9 +2,11 @@ package com.example.smartcooking.di
 
 import com.example.smartcooking.data.ai.LocalRuleBasedAiAssistant
 import com.example.smartcooking.data.local.db.seed.DatabaseSeeder
+import com.example.smartcooking.data.mealplan.LocalRuleBasedMealPlanGenerator
 import com.example.smartcooking.data.repository.RecipeRepositoryImpl
 import com.example.smartcooking.data.repository.UserRepositoryImpl
 import com.example.smartcooking.domain.ai.AiRecipeAssistant
+import com.example.smartcooking.domain.mealplan.MealPlanGenerator
 import com.example.smartcooking.domain.repository.RecipeRepository
 import com.example.smartcooking.domain.repository.UserRepository
 import com.example.smartcooking.domain.seed.SeedStatus
@@ -31,6 +33,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindAiRecipeAssistant(impl: LocalRuleBasedAiAssistant): AiRecipeAssistant
+
+    @Binds
+    @Singleton
+    abstract fun bindMealPlanGenerator(impl: LocalRuleBasedMealPlanGenerator): MealPlanGenerator
 
     // Task 4 审查修正:seed 完成信号,供 RecipeListViewModel 消除首启竞态
     @Binds

@@ -64,7 +64,11 @@ fun RecipeCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    "${recipe.cookingTimeMinutes} min · ${difficultyLabel(recipe.difficulty)}",
+                    if (recipe.cookingTimeMinutes > 0) {
+                        "${recipe.cookingTimeMinutes} min · ${difficultyLabel(recipe.difficulty)}"
+                    } else {
+                        difficultyLabel(recipe.difficulty)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -99,13 +103,13 @@ private fun RecipeThumbnail(recipe: RecipeSummary, modifier: Modifier = Modifier
     when {
         res != null -> Image(
             painter = painterResource(res),
-            contentDescription = recipe.title,
+            contentDescription = null,
             modifier = modifier.clip(shape),
             contentScale = ContentScale.Crop
         )
         recipe.coverImageUrl.isNotBlank() -> AsyncImage(
             model = recipe.coverImageUrl,
-            contentDescription = recipe.title,
+            contentDescription = null,
             modifier = modifier.clip(shape),
             contentScale = ContentScale.Crop
         )
